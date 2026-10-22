@@ -5,17 +5,23 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/item_model.dart';
 
+/// Exceção com mensagem amigável para exibição direta ao usuário
+class AppException implements Exception {
+  final String message;
+  const AppException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   ApiService._internal();
   static final ApiService instance = ApiService._internal();
 
-  /// Permite sobrescrever a URL base manualmente em tempo de execução
+  /// Permite sobrescrever a URL base manualmente (ex: em desenvolvimento)
   static String? customBaseUrl;
 
-  /// Retorna a URL base adequada dependendo da plataforma:
-  /// - Android Emulator: 10.0.2.2:8000
-  /// - iOS / Web / Desktop: localhost:8000
-  /// - Celular Físico: configure ApiService.customBaseUrl com o IP do seu PC
+  /// Retorna a URL base adequada dependendo da plataforma
   static String get baseUrl {
     if (customBaseUrl != null && customBaseUrl!.isNotEmpty) {
       return customBaseUrl!.endsWith('/')
@@ -28,11 +34,9 @@ class ApiService {
     }
 
     if (Platform.isAndroid) {
-      // Loopback padrão do emulador Android para a máquina host
       return 'http://10.0.2.2:8000/api';
     }
 
-    // iOS Simulator, macOS, Linux, Windows
     return 'http://localhost:8000/api';
   }
 
@@ -43,7 +47,34 @@ class ApiService {
         'Accept': 'application/json',
       };
 
-  /// Lista itens da API (suporta resposta paginada do DRF ou array puro)
+  AppException _handleError(Object error, [String defaultMessage = 'Não foi possível completar a operação. Tente novamente.']) {
+    debugPrint('[ApiService Error Técnico]: $error');
+
+    if (error is TimeoutException) {
+      return const AppException(
+        'O servidor demorou muito para responder. Verifique sua conexão e tente novamente.',
+      );
+    }
+
+    final errStr = error.toString().toLowerCase();
+    if (errStr.contains('socketexception') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('clientexception') ||
+        errStr.contains('failed host lookup') ||
+        errStr.contains('network is unreachable')) {
+      return const AppException(
+        'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.',
+      );
+    }
+
+    if (error is AppException) {
+      return error;
+    }
+
+    return AppException(defaultMessage);
+  }
+
+  /// Lista itens da API
   Future<List<Item>> getItems() async {
     final uri = Uri.parse('$baseUrl/items/');
     try {
@@ -65,15 +96,13 @@ class ApiService {
           return [];
         }
       } else {
-        throw Exception(
-            'Falha ao carregar itens: ${response.statusCode} - ${response.body}');
+        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
+        throw const AppException(
+          'O serviço está temporariamente indisponível. Tente novamente mais tarde.',
+        );
       }
-    } on TimeoutException {
-      throw Exception(
-          'Tempo limite excedido ao conectar com a API ($baseUrl). O backend Django está rodando?');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Erro de conexão com $baseUrl: $e');
+      throw _handleError(e, 'Não foi possível carregar os dados no momento.');
     }
   }
 
@@ -102,21 +131,20 @@ class ApiService {
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         return Item.fromJson(decoded);
       } else {
-        throw Exception(
-            'Erro ao criar item: ${response.statusCode} - ${response.body}');
+        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
+        throw const AppException(
+          'Não foi possível salvar o item. Tente novamente em alguns instantes.',
+        );
       }
-    } on TimeoutException {
-      throw Exception('Tempo limite excedido ao criar item.');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Erro ao criar item: $e');
+      throw _handleError(e, 'Não foi possível salvar o item. Tente novamente.');
     }
   }
 
   /// Atualiza os dados de um item existente (PATCH)
   Future<Item> updateItem(Item item) async {
     if (item.id == null) {
-      throw Exception('Item sem ID para atualização.');
+      throw const AppException('Item inválido para atualização.');
     }
 
     final uri = Uri.parse('$baseUrl/items/${item.id}/');
@@ -138,14 +166,13 @@ class ApiService {
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         return Item.fromJson(decoded);
       } else {
-        throw Exception(
-            'Erro ao atualizar item: ${response.statusCode} - ${response.body}');
+        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
+        throw const AppException(
+          'Não foi possível atualizar o item. Tente novamente mais tarde.',
+        );
       }
-    } on TimeoutException {
-      throw Exception('Tempo limite excedido ao atualizar item.');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Erro ao atualizar item: $e');
+      throw _handleError(e, 'Não foi possível atualizar o item. Tente novamente.');
     }
   }
 
@@ -157,14 +184,13 @@ class ApiService {
           await http.delete(uri, headers: _headers).timeout(_timeout);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(
-            'Erro ao deletar item: ${response.statusCode} - ${response.body}');
+        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
+        throw const AppException(
+          'Não foi possível excluir o item. Tente novamente mais tarde.',
+        );
       }
-    } on TimeoutException {
-      throw Exception('Tempo limite excedido ao deletar item.');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Erro ao deletar item: $e');
+      throw _handleError(e, 'Não foi possível excluir o item. Tente novamente.');
     }
   }
 }

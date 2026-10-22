@@ -46,7 +46,7 @@ class _CreateItemScreenState extends State<CreateItemScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao salvar: $e'),
+          content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

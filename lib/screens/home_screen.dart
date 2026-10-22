@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/item_model.dart';
 import '../services/api_service.dart';
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao atualizar: $e'),
+          content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao excluir: $e'),
+            content: Text(e.toString()),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -83,27 +84,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openConfigDialog() {
+  void _openDevSettingsDialog() {
     final controller = TextEditingController(text: ApiService.baseUrl);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Configuração da API'),
+        title: const Text('Configuração de Conexão'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Ajuste o endpoint caso esteja rodando em dispositivo físico ou outra porta:',
+              'Endereço do servidor:',
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               decoration: const InputDecoration(
-                labelText: 'Base URL',
-                hintText: 'http://192.168.1.X:8000/api',
+                labelText: 'Servidor',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.of(ctx).pop();
               _refreshItems();
             },
-            child: const Text('Restaurar Padrão'),
+            child: const Text('Padrão'),
           ),
           FilledButton(
             onPressed: () {
@@ -137,16 +137,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Itens'),
+        title: GestureDetector(
+          // Em modo debug, um toque longo permite ajustar o servidor caso necessário
+          onLongPress: kDebugMode ? _openDevSettingsDialog : null,
+          child: const Text('Itens'),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Configurar URL da API',
-            onPressed: _openConfigDialog,
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Recarregar',
+            tooltip: 'Atualizar',
             onPressed: _refreshItems,
           ),
         ],
@@ -170,22 +169,22 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
-            // 2. Estado de Erro
+            // 2. Estado de Erro Amigável
             if (snapshot.hasError) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.cloud_off_rounded,
-                        size: 64,
+                        Icons.wifi_off_rounded,
+                        size: 72,
                         color: theme.colorScheme.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Não foi possível carregar os itens',
+                        'Não foi possível carregar os dados',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -193,28 +192,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${snapshot.error}',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        snapshot.error?.toString() ??
+                            'Verifique sua conexão com a internet e tente novamente.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: _openConfigDialog,
-                            icon: const Icon(Icons.settings),
-                            label: const Text('Mudar URL'),
-                          ),
-                          const SizedBox(width: 12),
-                          FilledButton.icon(
-                            onPressed: _refreshItems,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Tentar Novamente'),
-                          ),
-                        ],
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: _refreshItems,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tentar novamente'),
                       ),
                     ],
                   ),
@@ -222,26 +211,37 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
-            // 3. Estado Vazio
+            // 3. Estado Vazio Amigável
             final items = snapshot.data ?? [];
             if (items.isEmpty) {
               return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.inbox_outlined,
-                      size: 64,
-                      color: theme.colorScheme.outline,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Nenhum item cadastrado',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('Toque no botão abaixo para adicionar um item.'),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 72,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Nenhum item encontrado',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Toque no botão "Novo Item" abaixo para adicionar seu primeiro registro.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
