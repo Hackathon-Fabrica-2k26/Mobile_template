@@ -4,18 +4,18 @@ import 'screens/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MobileTemplateApp());
+  runApp(const MarsupiApp());
 }
 
-class MobileTemplateApp extends StatelessWidget {
-  const MobileTemplateApp({super.key});
+class MarsupiApp extends StatelessWidget {
+  const MarsupiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const seedColor = Color(0xFF1E88E5);
+    const seedColor = Color(0xFF0D9488); // Teal acolhedor (educação e desenvolvimento)
 
     return MaterialApp(
-      title: 'Mobile Starter Template',
+      title: 'Marsupi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

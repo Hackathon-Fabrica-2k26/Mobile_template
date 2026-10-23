@@ -140,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: GestureDetector(
           // Em modo debug, um toque longo permite ajustar o servidor caso necessário
           onLongPress: kDebugMode ? _openDevSettingsDialog : null,
-          child: const Text('Itens'),
+          child: const Text('Marsupi'),
         ),
         actions: [
           IconButton(
