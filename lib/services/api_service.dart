@@ -7,9 +7,13 @@ class ApiService {
   static final ApiService instance = ApiService._internal();
 
   /// URL padrão para desenvolvimento local.
+  /// Pode ser configurada via --dart-define=API_URL=http://...
   /// No emulador Android, 10.0.2.2 mapeia para o host localhost.
-  /// No desktop linux/web, usa 127.0.0.1.
-  String baseUrl = 'http://127.0.0.1:8000';
+  /// No desktop linux/web, usa 127.0.0.1 por padrão.
+  String baseUrl = const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://127.0.0.1:8000',
+  );
 
   String? _accessToken;
   String? _refreshToken;

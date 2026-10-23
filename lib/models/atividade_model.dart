@@ -2,17 +2,25 @@ class Atividade {
   final int? id;
   final String nome;
   final String tipo;
+  final int? turmaId;
   final int? alunoId;
   final String? descricao;
-  final String? inclusiveTip;
+  final String? dataEnvio;
+  final int relatoriosCount;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const Atividade({
     this.id,
     required this.nome,
-    required this.tipo,
+    this.tipo = 'Linguagem / Avaliação',
+    this.turmaId,
     this.alunoId,
     this.descricao,
-    this.inclusiveTip,
+    this.dataEnvio,
+    this.relatoriosCount = 0,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Atividade.fromJson(Map<String, dynamic> json) {
@@ -22,11 +30,21 @@ class Atividade {
           : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
       nome: json['nome'] as String? ?? json['title'] as String? ?? '',
       tipo: json['tipo'] as String? ?? json['type'] as String? ?? 'Geral',
-      alunoId: json['Aluno_id'] as int? ?? json['aluno_id'] as int?,
-      descricao: json['objective'] as String? ??
-          json['instructions'] as String? ??
-          json['descricao'] as String?,
-      inclusiveTip: json['inclusive_tip'] as String?,
+      turmaId: json['turma_id'] as int? ?? json['turma'] as int?,
+      alunoId: json['aluno_id'] as int? ?? json['aluno'] as int?,
+      descricao: json['descricao'] as String? ??
+          json['objective'] as String? ??
+          json['instructions'] as String?,
+      dataEnvio: json['data'] as String? ?? json['data_envio'] as String?,
+      relatoriosCount: json['relatorios_count'] as int? ??
+          (json['relatorios'] as List<dynamic>?)?.length ??
+          0,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'].toString())
+          : null,
     );
   }
 
@@ -35,7 +53,10 @@ class Atividade {
       if (id != null) 'id': id,
       'nome': nome,
       'tipo': tipo,
-      if (alunoId != null) 'Aluno_id': alunoId,
+      if (turmaId != null) 'turma_id': turmaId,
+      if (alunoId != null) 'aluno': alunoId,
+      if (descricao != null) 'descricao': descricao,
+      if (dataEnvio != null) 'data': dataEnvio,
     };
   }
 }
