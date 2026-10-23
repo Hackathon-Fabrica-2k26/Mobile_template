@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/mock_data_service.dart';
+import 'aluno_pei_screen.dart';
 import 'create_screen.dart';
+import 'criar_atividade_flow.dart';
+import 'enviar_trabalhos_flow.dart';
 
 class TurmaDetailScreen extends StatefulWidget {
   final int turmaId;
@@ -243,6 +246,22 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen>
                     onPressed: () {
                       Navigator.of(ctx).pop();
                       Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AlunoPeiScreen(
+                            alunoId: (aluno['id'] as num?)?.toInt() ?? 101,
+                            alunoNome: nome,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.assignment_outlined, size: 20),
+                    label: const Text('Rascunho de PEI & Código do Aluno'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const CreateItemScreen()),
                       );
                     },
@@ -448,9 +467,32 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Atividades da turma',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Atividades da turma',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () async {
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => CriarAtividadeFlowScreen(
+                                            turmaId: widget.turmaId,
+                                            turmaNome: widget.turmaNome,
+                                          ),
+                                        ),
+                                      );
+                                      _loadData();
+                                    },
+                                    icon: const Icon(Icons.add, size: 14),
+                                    label: const Text('Nova atividade', style: TextStyle(fontSize: 11)),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 4),
                               const Text(
@@ -470,37 +512,51 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen>
                                 )
                               else
                                 ..._atividades.map((ativ) {
+                                  final id = ativ['id'] as int? ?? 1;
                                   final nome = ativ['nome'] as String? ?? 'Atividade';
                                   final tipo = ativ['tipo'] as String? ?? '';
                                   final total = ativ['relatorios_count'] ?? widget.totalAlunos;
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(
-                                      color: MarsupiColors.surface,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: MarsupiColors.mintBorder.withValues(alpha: 0.7)),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.description_outlined, color: MarsupiColors.primary, size: 28),
-                                        const SizedBox(width: 14),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                '$total relatórios disponíveis · $tipo',
-                                                style: const TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
-                                              ),
-                                            ],
+                                  return InkWell(
+                                    onTap: () async {
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => EnviarTrabalhosFlowScreen(
+                                            atividadeId: id,
+                                            atividadeNome: nome,
                                           ),
                                         ),
-                                        const Icon(Icons.chevron_right, color: MarsupiColors.primary),
-                                      ],
+                                      );
+                                      _loadData();
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: MarsupiColors.surface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: MarsupiColors.mintBorder.withValues(alpha: 0.7)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.description_outlined, color: MarsupiColors.primary, size: 28),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  '$total relatórios disponíveis · $tipo',
+                                                  style: const TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Icon(Icons.chevron_right, color: MarsupiColors.primary),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 }),
@@ -510,7 +566,20 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen>
                       ),
                       const Spacer(),
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          final ativ = _atividades.isNotEmpty
+                              ? _atividades.first
+                              : {'id': 1, 'nome': 'Explorando as vogais'};
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => EnviarTrabalhosFlowScreen(
+                                atividadeId: ativ['id'] as int? ?? 1,
+                                atividadeNome: ativ['nome'] as String? ?? 'Atividade',
+                              ),
+                            ),
+                          );
+                          _loadData();
+                        },
                         icon: const Icon(Icons.upload_file),
                         label: const Text('Enviar Atividades (Upload)'),
                       ),

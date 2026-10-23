@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/mock_data_service.dart';
 import 'create_screen.dart';
+import 'portal_responsavel_screen.dart';
+import 'turma_cadastro_flow.dart';
 import 'turma_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -75,6 +77,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.family_restroom, color: MarsupiColors.primary),
+            tooltip: 'Portal da Família / Responsável',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PortalResponsavelScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.search, color: MarsupiColors.darkForest),
             onPressed: () {},
           ),
@@ -131,7 +142,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const NovaTurmaFotoScreen()),
+                          );
+                          _loadData();
+                        },
                         icon: const Icon(Icons.add, size: 16),
                         label: const Text('Nova turma', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
