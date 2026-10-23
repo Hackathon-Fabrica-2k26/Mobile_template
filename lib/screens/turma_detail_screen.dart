@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
+import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
 import 'aluno_detalhes_screen.dart';
 import 'enviar_atividades_screen.dart';
@@ -47,11 +48,11 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
   }
 
   Future<void> _loadData() async {
-    final user = await MockDataService.instance.getUser();
+    final user = await ApiService.instance.getUser();
     final alunos =
-        await MockDataService.instance.getAlunos(turmaId: widget.turmaId);
+        await ApiService.instance.getAlunos(turmaId: widget.turmaId);
     final ativs =
-        await MockDataService.instance.getAtividades(turmaId: widget.turmaId);
+        await ApiService.instance.getAtividades(turmaId: widget.turmaId);
     if (mounted) {
       setState(() {
         _user = user;

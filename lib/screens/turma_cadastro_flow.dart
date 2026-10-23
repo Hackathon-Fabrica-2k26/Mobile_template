@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
+import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
 import 'loading_screen.dart';
 
@@ -618,12 +619,12 @@ class _ConfirmarNomesScreenState extends State<ConfirmarNomesScreen> {
       task: () async {
         await Future.delayed(const Duration(milliseconds: 500));
         if (widget.turmaId != null) {
-          await MockDataService.instance.addAlunosNaTurma(
+          await ApiService.instance.addAlunosNaTurma(
             turmaId: widget.turmaId!,
             nomesAlunos: listaFinal,
           );
         } else {
-          await MockDataService.instance.addTurmaComAlunos(
+          await ApiService.instance.addTurmaComAlunos(
             nome: widget.nomeTurma,
             turno: widget.turno,
             anoLetivo: widget.anoLetivo,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
-import '../services/mock_data_service.dart';
+import '../services/api_service.dart';
 import 'home_screen.dart';
 import 'loading_screen.dart';
 
@@ -65,7 +65,7 @@ class _OtpScreenState extends State<OtpScreen> {
     final success = await showMarsupiLoading<bool>(
       context,
       message: 'Carregando...',
-      task: () => MockDataService.instance.verifyOtp(code),
+      task: () => ApiService.instance.verifyOtp(code),
     );
 
     if (mounted && (success ?? false)) {

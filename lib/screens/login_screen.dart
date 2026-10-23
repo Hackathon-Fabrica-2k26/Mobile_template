@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
-import '../services/mock_data_service.dart';
+import '../services/api_service.dart';
 import 'loading_screen.dart';
 import 'otp_screen.dart';
 
@@ -32,16 +32,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final matricula = _matriculaController.text.trim();
     final senha = _senhaController.text;
 
-    final ok = await showMarsupiLoading<bool>(
+    final result = await showMarsupiLoading<Map<String, dynamic>>(
       context,
       message: 'Carregando...',
-      task: () => MockDataService.instance.authenticate(matricula, senha),
+      task: () => ApiService.instance.login(matricula, senha),
     );
 
-    if (mounted && (ok ?? false)) {
-      final user = await MockDataService.instance.getUser();
-      final email = (user['email'] as String?) ?? '';
-      if (!mounted) return;
+    if (mounted && (result?['success'] == true)) {
+      final email = (result?['email'] as String?) ?? '';
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => OtpScreen(email: email),

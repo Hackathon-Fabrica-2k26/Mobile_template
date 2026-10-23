@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
+import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
 import 'loading_screen.dart';
 
@@ -34,7 +35,7 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
   }
 
   Future<void> _carregarDadosIniciais() async {
-    final turmas = await MockDataService.instance.getTurmas();
+    final turmas = await ApiService.instance.getTurmas();
     final exemplos = await MockDataService.instance.getArquivosExemplo();
     if (!mounted) return;
     setState(() {
@@ -91,7 +92,7 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
       message: 'Carregando...',
       task: () async {
         await Future.delayed(const Duration(milliseconds: 450));
-        await MockDataService.instance.addAtividade(
+        await ApiService.instance.addAtividade(
           turmaId: widget.turmaId,
           nome: _tituloController.text.trim(),
           dataAtividade: _dataController.text.trim(),

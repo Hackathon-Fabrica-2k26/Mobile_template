@@ -1,196 +1,431 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../models/item_model.dart';
-
-/// Exceção com mensagem amigável para exibição direta ao usuário
-class AppException implements Exception {
-  final String message;
-  const AppException(this.message);
-
-  @override
-  String toString() => message;
-}
+import 'mock_data_service.dart';
 
 class ApiService {
   ApiService._internal();
   static final ApiService instance = ApiService._internal();
 
-  /// Permite sobrescrever a URL base manualmente (ex: em desenvolvimento)
-  static String? customBaseUrl;
+  /// URL padrão para desenvolvimento local.
+  /// No emulador Android, 10.0.2.2 mapeia para o host localhost.
+  /// No desktop linux/web, usa 127.0.0.1.
+  String baseUrl = 'http://127.0.0.1:8000';
 
-  /// Retorna a URL base adequada dependendo da plataforma
-  static String get baseUrl {
-    if (customBaseUrl != null && customBaseUrl!.isNotEmpty) {
-      return customBaseUrl!.endsWith('/')
-          ? customBaseUrl!.substring(0, customBaseUrl!.length - 1)
-          : customBaseUrl!;
-    }
+  String? _accessToken;
+  String? _refreshToken;
+  String? _lastOtpToken;
+  String? _lastUserEmail;
+  Map<String, dynamic>? _currentUser;
 
-    if (kIsWeb) {
-      return 'http://localhost:8000/api';
-    }
+  String? get accessToken => _accessToken;
+  String? get refreshToken => _refreshToken;
+  bool get isAuthenticated => _accessToken != null;
 
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api';
-    }
-
-    return 'http://localhost:8000/api';
+  void setBaseUrl(String url) {
+    baseUrl = url.replaceAll(RegExp(r'/+$'), '');
   }
 
-  static const Duration _timeout = Duration(seconds: 10);
-
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json',
-      };
-
-  AppException _handleError(Object error, [String defaultMessage = 'Não foi possível completar a operação. Tente novamente.']) {
-    debugPrint('[ApiService Error Técnico]: $error');
-
-    if (error is TimeoutException) {
-      return const AppException(
-        'O servidor demorou muito para responder. Verifique sua conexão e tente novamente.',
-      );
+  Map<String, String> _headers({bool withAuth = true}) {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (withAuth && _accessToken != null) {
+      headers['Authorization'] = 'Bearer $_accessToken';
     }
-
-    final errStr = error.toString().toLowerCase();
-    if (errStr.contains('socketexception') ||
-        errStr.contains('connection refused') ||
-        errStr.contains('clientexception') ||
-        errStr.contains('failed host lookup') ||
-        errStr.contains('network is unreachable')) {
-      return const AppException(
-        'Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.',
-      );
-    }
-
-    if (error is AppException) {
-      return error;
-    }
-
-    return AppException(defaultMessage);
+    return headers;
   }
 
-  /// Lista itens da API
-  Future<List<Item>> getItems() async {
-    final uri = Uri.parse('$baseUrl/items/');
+  /// Verifica se o backend está acessível em até 1.5s
+  Future<bool> checkBackendHealth() async {
     try {
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-
-        if (decoded is Map<String, dynamic> && decoded.containsKey('results')) {
-          final results = decoded['results'] as List<dynamic>;
-          return results
-              .map((e) => Item.fromJson(e as Map<String, dynamic>))
-              .toList();
-        } else if (decoded is List) {
-          return decoded
-              .map((e) => Item.fromJson(e as Map<String, dynamic>))
-              .toList();
-        } else {
-          return [];
-        }
-      } else {
-        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
-        throw const AppException(
-          'O serviço está temporariamente indisponível. Tente novamente mais tarde.',
-        );
-      }
-    } catch (e) {
-      throw _handleError(e, 'Não foi possível carregar os dados no momento.');
+      final res = await http
+          .get(Uri.parse('$baseUrl/health/'))
+          .timeout(const Duration(milliseconds: 1500));
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
     }
   }
 
-  /// Cria um novo item
-  Future<Item> createItem({
-    required String title,
-    String description = '',
-    bool done = false,
-  }) async {
-    final uri = Uri.parse('$baseUrl/items/');
+  /// Autenticação: tenta a API /api/auth/login/. Se falhar ou offline, fallback para MockDataService.
+  Future<Map<String, dynamic>> login(String matricula, String password) async {
     try {
-      final response = await http
+      final res = await http
           .post(
-            uri,
-            headers: _headers,
+            Uri.parse('$baseUrl/api/auth/login/'),
+            headers: _headers(withAuth: false),
             body: jsonEncode({
-              'title': title,
-              'description': description,
-              'done': done,
+              'matricula': matricula.trim(),
+              'password': password,
             }),
           )
-          .timeout(_timeout);
+          .timeout(const Duration(seconds: 4));
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        return Item.fromJson(decoded);
-      } else {
-        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
-        throw const AppException(
-          'Não foi possível salvar o item. Tente novamente em alguns instantes.',
-        );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+        _lastOtpToken = data['otp_token'] as String?;
+        _lastUserEmail = data['email'] as String?;
+        return {
+          'success': true,
+          'is_remote': true,
+          'otp_token': _lastOtpToken,
+          'email': _lastUserEmail,
+        };
       }
-    } catch (e) {
-      throw _handleError(e, 'Não foi possível salvar o item. Tente novamente.');
+    } catch (_) {
+      // Ignora erro de rede e cai no fallback
     }
+
+    // Fallback MockDataService
+    final mockOk = await MockDataService.instance.authenticate(matricula, password);
+    final user = await MockDataService.instance.getUser();
+    return {
+      'success': mockOk,
+      'is_remote': false,
+      'otp_token': null,
+      'email': user['email'] ?? 'ana.professora@escola.edu.br',
+    };
   }
 
-  /// Atualiza os dados de um item existente (PATCH)
-  Future<Item> updateItem(Item item) async {
-    if (item.id == null) {
-      throw const AppException('Item inválido para atualização.');
+  /// Verificação do OTP
+  Future<bool> verifyOtp(String code) async {
+    if (_lastOtpToken != null) {
+      try {
+        final res = await http
+            .post(
+              Uri.parse('$baseUrl/api/auth/otp/verify/'),
+              headers: _headers(withAuth: false),
+              body: jsonEncode({
+                'otp_token': _lastOtpToken,
+                'code': code.trim(),
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          _accessToken = data['access'] as String?;
+          _refreshToken = data['refresh'] as String?;
+          await getUser(); // carrega dados do usuário
+          return true;
+        }
+      } catch (_) {
+        // Fallback para mock caso falhe
+      }
     }
 
-    final uri = Uri.parse('$baseUrl/items/${item.id}/');
-    try {
-      final response = await http
-          .patch(
-            uri,
-            headers: _headers,
+    return await MockDataService.instance.verifyOtp(code);
+  }
+
+  /// Reenviar código OTP
+  Future<bool> resendOtp() async {
+    if (_lastOtpToken != null) {
+      try {
+        final res = await http
+            .post(
+              Uri.parse('$baseUrl/api/auth/otp/resend/'),
+              headers: _headers(withAuth: false),
+              body: jsonEncode({
+                'otp_token': _lastOtpToken,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          _lastOtpToken = data['otp_token'] as String? ?? _lastOtpToken;
+          return true;
+        }
+      } catch (_) {}
+    }
+    return true;
+  }
+
+  /// Dados do usuário autenticado (/api/auth/me/)
+  Future<Map<String, dynamic>> getUser() async {
+    if (_accessToken != null) {
+      try {
+        final res = await http
+            .get(
+              Uri.parse('$baseUrl/api/auth/me/'),
+              headers: _headers(),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final nome = data['name'] as String? ?? 'Professor';
+          final initials = nome.trim().isNotEmpty
+              ? nome.trim().split(' ').map((p) => p[0]).take(2).join().toUpperCase()
+              : 'PR';
+
+          _currentUser = {
+            'id': data['id'],
+            'nome': nome,
+            'matricula': data['matricula'] ?? 'DEMO0001',
+            'email': data['email'] ?? '',
+            'escola': 'Escola Marsupi',
+            'avatar': initials,
+          };
+          return _currentUser!;
+        }
+      } catch (_) {}
+    }
+
+    if (_currentUser != null) return _currentUser!;
+    return await MockDataService.instance.getUser();
+  }
+
+  /// Listagem de turmas (/api/turmas/)
+  Future<List<Map<String, dynamic>>> getTurmas() async {
+    if (_accessToken != null) {
+      try {
+        final res = await http
+            .get(
+              Uri.parse('$baseUrl/api/turmas/'),
+              headers: _headers(),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final results = body['results'] as List<dynamic>? ?? [];
+          return results.map((t) {
+            final map = Map<String, dynamic>.from(t as Map);
+            return {
+              'id': map['id'],
+              'nome': map['nome'] ?? 'Turma',
+              'turno': map['turno_display'] ?? (map['turno'] == 'manha' ? 'Manhã' : 'Tarde'),
+              'ano_letivo': 2026,
+              'estudantes_count': map['total_estudantes'] ?? 0,
+              'icon': 'book',
+              'escola': map['escola'],
+            };
+          }).toList();
+        }
+      } catch (_) {}
+    }
+
+    return await MockDataService.instance.getTurmas();
+  }
+
+  /// Listagem de alunos da turma (/api/alunos/)
+  Future<List<Map<String, dynamic>>> getAlunos({int? turmaId}) async {
+    if (_accessToken != null) {
+      try {
+        final query = turmaId != null ? '?turma=$turmaId' : '';
+        final res = await http
+            .get(
+              Uri.parse('$baseUrl/api/alunos/$query'),
+              headers: _headers(),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final results = body['results'] as List<dynamic>? ?? [];
+          return results.map((a) {
+            final map = Map<String, dynamic>.from(a as Map);
+            final nome = map['nome'] as String? ?? 'Aluno';
+            final initial = nome.trim().isNotEmpty ? nome.trim()[0].toUpperCase() : 'A';
+            return {
+              'id': map['id'],
+              'turma_id': map['turma'],
+              'nome': nome,
+              'avatar': initial,
+              'matricula': 'AL-2026-00${map['id']}',
+              'nascimento': '14/03/2019 · 7 anos',
+              'status': 'Aluno ativo',
+              'precisa_conferencia': false,
+              'acompanhamento': 'Acompanhado pelo sistema pedagógico integrado.',
+              'atividades': <Map<String, dynamic>>[],
+            };
+          }).toList();
+        }
+      } catch (_) {}
+    }
+
+    return await MockDataService.instance.getAlunos(turmaId: turmaId);
+  }
+
+  /// Listagem de atividades (/api/atividades/)
+  Future<List<Map<String, dynamic>>> getAtividades({int? turmaId}) async {
+    if (_accessToken != null) {
+      try {
+        final res = await http
+            .get(
+              Uri.parse('$baseUrl/api/atividades/'),
+              headers: _headers(),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final results = body['results'] as List<dynamic>? ?? [];
+          if (results.isNotEmpty) {
+            return results.map((ativ) {
+              final map = Map<String, dynamic>.from(ativ as Map);
+              return {
+                'id': map['id'],
+                'turma_id': turmaId ?? 1,
+                'nome': map['nome'] ?? 'Atividade',
+                'tipo': map['tipo'] ?? 'Pedagógico',
+                'relatorios_count': 0,
+                'descricao': '',
+              };
+            }).toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    return await MockDataService.instance.getAtividades(turmaId: turmaId);
+  }
+
+  /// Cadastro de nova turma (/api/turmas/)
+  Future<Map<String, dynamic>> addTurmaComAlunos({
+    required String nome,
+    required String turno,
+    required int anoLetivo,
+    required List<String> nomesAlunos,
+    String? fotoChamada,
+  }) async {
+    if (_accessToken != null) {
+      try {
+        final turnoCode = turno.toLowerCase().contains('tarde')
+            ? 'tarde'
+            : turno.toLowerCase().contains('integral')
+                ? 'integral'
+                : 'manha';
+
+        final res = await http
+            .post(
+              Uri.parse('$baseUrl/api/turmas/'),
+              headers: _headers(),
+              body: jsonEncode({
+                'nome': nome.trim(),
+                'turno': turnoCode,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 201) {
+          final nova = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final turmaId = nova['id'] as int;
+
+          // Cadastra os alunos reconhecidos no backend
+          for (final alunoNome in nomesAlunos) {
+            try {
+              await http.post(
+                Uri.parse('$baseUrl/api/alunos/'),
+                headers: _headers(),
+                body: jsonEncode({
+                  'nome': alunoNome.trim(),
+                  'turma': turmaId,
+                }),
+              );
+            } catch (_) {}
+          }
+
+          return {
+            'id': turmaId,
+            'nome': nova['nome'],
+            'turno': nova['turno_display'] ?? turno,
+            'ano_letivo': anoLetivo,
+            'estudantes_count': nomesAlunos.length,
+            'icon': 'book',
+          };
+        }
+      } catch (_) {}
+    }
+
+    return await MockDataService.instance.addTurmaComAlunos(
+      nome: nome,
+      turno: turno,
+      anoLetivo: anoLetivo,
+      nomesAlunos: nomesAlunos,
+      fotoChamada: fotoChamada,
+    );
+  }
+
+  /// Adiciona alunos em turma existente
+  Future<void> addAlunosNaTurma({
+    required int turmaId,
+    required List<String> nomesAlunos,
+  }) async {
+    if (_accessToken != null) {
+      try {
+        for (final alunoNome in nomesAlunos) {
+          await http.post(
+            Uri.parse('$baseUrl/api/alunos/'),
+            headers: _headers(),
             body: jsonEncode({
-              'title': item.title,
-              'description': item.description,
-              'done': item.done,
+              'nome': alunoNome.trim(),
+              'turma': turmaId,
             }),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        return Item.fromJson(decoded);
-      } else {
-        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
-        throw const AppException(
-          'Não foi possível atualizar o item. Tente novamente mais tarde.',
-        );
-      }
-    } catch (e) {
-      throw _handleError(e, 'Não foi possível atualizar o item. Tente novamente.');
+          );
+        }
+        return;
+      } catch (_) {}
     }
+
+    await MockDataService.instance.addAlunosNaTurma(
+      turmaId: turmaId,
+      nomesAlunos: nomesAlunos,
+    );
   }
 
-  /// Deleta um item pelo ID
-  Future<void> deleteItem(int id) async {
-    final uri = Uri.parse('$baseUrl/items/$id/');
-    try {
-      final response =
-          await http.delete(uri, headers: _headers).timeout(_timeout);
+  /// Adiciona nova atividade (/api/atividades/)
+  Future<Map<String, dynamic>> addAtividade({
+    required int turmaId,
+    required String nome,
+    String? dataAtividade,
+    String? observacoes,
+  }) async {
+    if (_accessToken != null) {
+      try {
+        final alunos = await getAlunos(turmaId: turmaId);
+        final primeiroAlunoId = alunos.isNotEmpty ? alunos.first['id'] as int? : null;
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        debugPrint('[ApiService Response Status]: ${response.statusCode} - ${response.body}');
-        throw const AppException(
-          'Não foi possível excluir o item. Tente novamente mais tarde.',
-        );
-      }
-    } catch (e) {
-      throw _handleError(e, 'Não foi possível excluir o item. Tente novamente.');
+        if (primeiroAlunoId != null) {
+          final res = await http.post(
+            Uri.parse('$baseUrl/api/atividades/'),
+            headers: _headers(),
+            body: jsonEncode({
+              'nome': nome.trim(),
+              'aluno': primeiroAlunoId,
+              'tipo': 'Linguagem / Avaliação',
+            }),
+          );
+
+          if (res.statusCode == 201) {
+            final map = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+            return {
+              'id': map['id'],
+              'turma_id': turmaId,
+              'nome': map['nome'] ?? nome,
+              'data': dataAtividade ?? '',
+              'descricao': observacoes ?? '',
+              'relatorios_count': 0,
+            };
+          }
+        }
+      } catch (_) {}
     }
+
+    return await MockDataService.instance.addAtividade(
+      turmaId: turmaId,
+      nome: nome,
+      dataAtividade: dataAtividade,
+      observacoes: observacoes,
+    );
+  }
+
+  /// Logout
+  void logout() {
+    _accessToken = null;
+    _refreshToken = null;
+    _lastOtpToken = null;
+    _currentUser = null;
   }
 }

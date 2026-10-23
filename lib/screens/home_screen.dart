@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
-import '../services/mock_data_service.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'turma_cadastro_flow.dart';
 import 'turma_detail_screen.dart';
@@ -34,8 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final user = await MockDataService.instance.getUser();
-    final turmas = await MockDataService.instance.getTurmas();
+    final user = await ApiService.instance.getUser();
+    final turmas = await ApiService.instance.getTurmas();
     if (mounted) {
       setState(() {
         _user = user;
@@ -463,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () {
+              ApiService.instance.logout();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
