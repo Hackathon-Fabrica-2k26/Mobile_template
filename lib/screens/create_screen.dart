@@ -44,9 +44,12 @@ class _CreateItemScreenState extends State<CreateItemScreen> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
+      final message = e is AppException
+          ? e.message
+          : 'Não foi possível salvar o registro no momento. Verifique sua conexão e tente novamente.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text(message),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

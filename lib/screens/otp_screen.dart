@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/marsupi_theme.dart';
-import 'loading_screen.dart';
+import '../services/mock_data_service.dart';
 import 'home_screen.dart';
+import 'loading_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -20,10 +21,11 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void initState() {
     super.initState();
-    _controllers[0].text = '2';
-    _controllers[1].text = '8';
-    _controllers[2].text = '4';
-    // Último campo vazio para digitação imediata
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNodes[0].requestFocus();
+      }
+    });
   }
 
   @override
@@ -37,18 +39,40 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  void _verifyOtp() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => LoadingScreen(
-          onFinished: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          },
+  String get _maskedEmail {
+    final email = widget.email.trim();
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+    final name = parts[0];
+    final domain = parts[1];
+    if (name.length <= 2) return '$name***@$domain';
+    return '${name[0]}***${name[name.length - 1]}@$domain';
+  }
+
+  Future<void> _verifyOtp() async {
+    final code = _controllers.map((c) => c.text.trim()).join();
+    if (code.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, informe os 4 dígitos do código de acesso.'),
+          backgroundColor: MarsupiColors.primary,
         ),
-      ),
+      );
+      return;
+    }
+
+    final success = await showMarsupiLoading<bool>(
+      context,
+      message: 'Confirmando seu acesso...',
+      task: () => MockDataService.instance.verifyOtp(code),
     );
+
+    if (mounted && (success ?? false)) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -101,7 +125,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     style: TextStyle(fontSize: 14, color: MarsupiColors.textMuted),
                   ),
                   Text(
-                    'a***@escola.edu.br',
+                    _maskedEmail,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -173,6 +197,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         ),
                       ),
                       onChanged: (val) {
+                        setState(() {});
                         if (val.isNotEmpty && index < 3) {
                           _focusNodes[index + 1].requestFocus();
                         } else if (val.isEmpty && index > 0) {

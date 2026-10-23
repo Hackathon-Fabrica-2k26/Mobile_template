@@ -1,0 +1,135 @@
+{
+  "user": {
+    "id": 1,
+    "nome": "Ana Paula",
+    "matricula": "PROF2026",
+    "email": "ana.professora@escola.edu.br",
+    "escola": "CEI Araquari",
+    "avatar": "AP"
+  },
+  "turmas": [
+    {
+      "id": 1,
+      "nome": "1º ano A",
+      "turno": "Manhã",
+      "estudantes_count": 25,
+      "icon": "pencil"
+    },
+    {
+      "id": 2,
+      "nome": "2º ano B",
+      "turno": "Tarde",
+      "estudantes_count": 28,
+      "icon": "book"
+    },
+    {
+      "id": 3,
+      "nome": "3º ano A",
+      "turno": "Manhã",
+      "estudantes_count": 26,
+      "icon": "desk"
+    }
+  ],
+  "alunos": [
+    {
+      "id": 101,
+      "turma_id": 1,
+      "nome": "Alice Santos",
+      "avatar": "A",
+      "status": "Perfil pedagógico atualizado",
+      "perfil_disc": "Estabilidade",
+      "radar_metrics": {
+        "Foco sustentado": 45,
+        "Raciocínio visual": 90,
+        "Interação social": 80,
+        "Regulação sensorial": 55,
+        "Coordenação fina": 60
+      },
+      "strengths": [
+        "Excelente memória visual e rápida assimilação de símbolos",
+        "Facilidade para colaborar e empatia com colegas"
+      ],
+      "support_needs": [
+        "Pausas ativas para autorregulação motora a cada 15 min",
+        "Pistas visuais claras de rotina para diminuir ansiedade"
+      ],
+      "dica_autonomia": "Professor, explore o raciocínio visual elevado de Alice para introduzir desafios de escrita em formato de mapas mentais."
+    },
+    {
+      "id": 102,
+      "turma_id": 1,
+      "nome": "Bruno Oliveira",
+      "avatar": "B",
+      "status": "2 registros recentes",
+      "perfil_disc": "Dominância",
+      "radar_metrics": {
+        "Foco sustentado": 70,
+        "Raciocínio visual": 65,
+        "Interação social": 85,
+        "Regulação sensorial": 70,
+        "Coordenação fina": 75
+      },
+      "strengths": [
+        "Liderança natural em dinâmicas coletivas",
+        "Comunicação verbal rica e expressiva"
+      ],
+      "support_needs": [
+        "Aprender a aguardar a vez de falar nas rodas de conversa"
+      ],
+      "dica_autonomia": "Atribua a Bruno o papel de monitor de materiais para canalizar sua energia de liderança de forma inclusiva."
+    },
+    {
+      "id": 103,
+      "turma_id": 1,
+      "nome": "Clara Souza",
+      "avatar": "C",
+      "status": "Perfil pedagógico atualizado",
+      "perfil_disc": "Conformidade",
+      "radar_metrics": {
+        "Foco sustentado": 85,
+        "Raciocínio visual": 80,
+        "Interação social": 65,
+        "Regulação sensorial": 80,
+        "Coordenação fina": 85
+      },
+      "strengths": [
+        "Organização exemplar de cadernos e materiais",
+        "Atenção minuciosa a detalhes e regras"
+      ],
+      "support_needs": [
+        "Incentivo para expor ideias em público sem receio de errar"
+      ],
+      "dica_autonomia": "Elogie o processo de tentativa e erro para diminuir o perfeccionismo e a ansiedade de Clara."
+    },
+    {
+      "id": 104,
+      "turma_id": 1,
+      "nome": "Davi Costa",
+      "avatar": "D",
+      "status": "1 observação pendente",
+      "perfil_disc": "Em mapeamento",
+      "radar_metrics": null,
+      "strengths": [],
+      "support_needs": [],
+      "dica_autonomia": null
+    }
+  ],
+  "atividades": [
+    {
+      "id": 1,
+      "turma_id": 1,
+      "nome": "Explorando as vogais",
+      "tipo": "Linguagem / Visual",
+      "relatorios_count": 25,
+      "descricao": "Atividade interativa de associação de sons e grafemas através de gravuras ilustradas."
+    },
+    {
+      "id": 2,
+      "turma_id": 1,
+      "nome": "Missão Espacial: Caligrafia nas Estrelas",
+      "tipo": "Coordenação Motora",
+      "relatorios_count": 25,
+      "descricao": "Traçado de constelações pontilhadas com estímulo tátil e visual de astronomia."
+    }
+  ]
+}

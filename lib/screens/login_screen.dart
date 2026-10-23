@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/marsupi_theme.dart';
+import '../services/mock_data_service.dart';
+import 'loading_screen.dart';
 import 'otp_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _matriculaController = TextEditingController(text: 'PROF-2026');
-  final _senhaController = TextEditingController(text: '123456');
+  final _matriculaController = TextEditingController();
+  final _senhaController = TextEditingController();
   bool _obscurePassword = true;
   bool _manterConectado = false;
   final _formKey = GlobalKey<FormState>();
@@ -23,14 +25,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const OtpScreen(email: 'ana.professora@escola.edu.br'),
-      ),
+    final matricula = _matriculaController.text.trim();
+    final senha = _senhaController.text;
+
+    final ok = await showMarsupiLoading<bool>(
+      context,
+      message: 'Acessando sua conta...',
+      task: () => MockDataService.instance.authenticate(matricula, senha),
     );
+
+    if (mounted && (ok ?? false)) {
+      final user = await MockDataService.instance.getUser();
+      final email = (user['email'] as String?) ?? 'ana.professora@escola.edu.br';
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => OtpScreen(email: email),
+        ),
+      );
+    }
   }
 
   @override
