@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/mock_data_service.dart';
 import 'loading_screen.dart';
-import 'turma_detail_screen.dart';
 
-/// ETAPA 1: Dados da Turma e Captura da Foto da Chamada (Figma 277:361)
 class NovaTurmaFotoScreen extends StatefulWidget {
   const NovaTurmaFotoScreen({super.key});
 
@@ -13,12 +12,11 @@ class NovaTurmaFotoScreen extends StatefulWidget {
 }
 
 class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _anoController = TextEditingController();
-  String _turno = 'Manhã';
-  bool _fotoAdicionada = false;
-  String _nomeArquivo = '';
+  String _turnoSelecionado = 'Manhã';
+  bool _fotoAnexada = false;
+  String? _origemFoto;
 
   @override
   void dispose() {
@@ -27,316 +25,502 @@ class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
     super.dispose();
   }
 
-  void _avancarParaConfirmacao() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _selecionarFoto(String origem) {
+    setState(() {
+      _fotoAnexada = true;
+      _origemFoto = origem;
+    });
+  }
 
-    if (!_fotoAdicionada) {
+  Future<void> _avancarParaRevisao() async {
+    if (_nomeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe o nome da turma.')),
+      );
+      return;
+    }
+    if (!_fotoAnexada) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, adicione uma foto da folha de chamada.'),
-          backgroundColor: MarsupiColors.primary,
+          content: Text('Envie ou tire uma foto da lista de chamada para reconhecer os nomes.'),
         ),
       );
       return;
     }
 
-    // Efeito de leitura da foto com IA conforme o Figma (Lendo a chamada...)
-    await showMarsupiLoading(
+    final anoLetivo = int.tryParse(_anoController.text.trim()) ?? 2026;
+    final ocrNomes = await showMarsupiLoading<List<Map<String, dynamic>>>(
       context,
-      message: 'Lendo a chamada e reconhecendo nomes...',
-      task: () async => await Future.delayed(const Duration(milliseconds: 600)),
+      message: 'Carregando...',
+      task: () async {
+        await Future.delayed(const Duration(milliseconds: 500));
+        return MockDataService.instance.getChamadaOcrNomes();
+      },
     );
 
-    if (!mounted) return;
+    if (!mounted || ocrNomes == null) return;
 
-    Navigator.of(context).push(
+    final created = await Navigator.push<bool>(
+      context,
       MaterialPageRoute(
         builder: (_) => ConfirmarNomesScreen(
-          turmaNome: _nomeController.text.trim(),
-          anoLetivo: int.tryParse(_anoController.text.trim()) ?? 2026,
-          turno: _turno,
+          nomeTurma: _nomeController.text.trim(),
+          turno: _turnoSelecionado,
+          anoLetivo: anoLetivo,
+          nomesIniciais: ocrNomes,
         ),
       ),
     );
+
+    if (created == true && mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nova turma'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      backgroundColor: MarsupiTheme.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Indicador de Etapa
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: MarsupiColors.mintContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'ETAPA 1 DE 3',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: MarsupiColors.primary,
-                      letterSpacing: 0.5,
+        child: Column(
+          children: [
+            // Top bar idêntica ao Figma (277:566)
+            Container(
+              height: 78,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.white,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Image.asset(
+                      'assets/images/logo_marsupi.png',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.contain,
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-
-                const Text(
-                  'Cadastre sua turma a partir de uma foto da chamada',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: MarsupiColors.darkForest,
+                  const Text(
+                    '☰',
+                    style: TextStyle(
+                      fontSize: 22,
+                      color: MarsupiTheme.primaryGreen,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'A IA reconhece os nomes dos alunos automaticamente.',
-                  style: TextStyle(fontSize: 13, color: MarsupiColors.textMuted),
-                ),
-                const SizedBox(height: 24),
-
-                // Campo Nome da turma
-                const Text(
-                  'Nome da turma *',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _nomeController,
-                  decoration: const InputDecoration(hintText: 'Ex: 1º ano A'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o nome da turma' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Linha Ano Letivo e Turno
-                Row(
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Ano letivo *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _anoController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(hintText: '2026'),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-                          ),
-                        ],
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Text(
+                        'Minhas turmas / Nova turma',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF70877B),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      flex: 2,
+                    const SizedBox(height: 10),
+                    Text(
+                      'Nova turma',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: MarsupiTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'ETAPA 1 DE 2 · DADOS E FOTO',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: MarsupiTheme.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: const LinearProgressIndicator(
+                        value: 120 / 358,
+                        minHeight: 3,
+                        backgroundColor: Color(0xFFDDE7DF),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          MarsupiTheme.primaryGreen,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Turno *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                          Text(
+                            'Nome da turma *',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<String>(
-                            initialValue: _turno,
-                            decoration: const InputDecoration(),
-                            items: const [
-                              DropdownMenuItem(value: 'Manhã', child: Text('Manhã')),
-                              DropdownMenuItem(value: 'Tarde', child: Text('Tarde')),
-                              DropdownMenuItem(value: 'Integral', child: Text('Integral')),
+                          SizedBox(
+                            height: 44,
+                            child: TextField(
+                              controller: _nomeController,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: MarsupiTheme.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Ex: 1º ano A',
+                                hintStyle: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: const Color(0xFF8EA398),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFCFDCD4),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: MarsupiTheme.primaryGreen,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Ano letivo *',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: MarsupiTheme.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    SizedBox(
+                                      height: 44,
+                                      child: TextField(
+                                        controller: _anoController,
+                                        keyboardType: TextInputType.number,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: MarsupiTheme.textPrimary,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: '2026',
+                                          hintStyle: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: const Color(0xFF8EA398),
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFCFDCD4),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              color: MarsupiTheme.primaryGreen,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Turno *',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: MarsupiTheme.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    SizedBox(
+                                      height: 44,
+                                      child: DropdownButtonFormField<String>(
+                                        initialValue: _turnoSelecionado,
+                                        icon: const Icon(
+                                          Icons.keyboard_arrow_down,
+                                          size: 18,
+                                          color: Color(0xFF70877B),
+                                        ),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: MarsupiTheme.textPrimary,
+                                        ),
+                                        decoration: InputDecoration(
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFCFDCD4),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              color: MarsupiTheme.primaryGreen,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                        items: ['Manhã', 'Tarde', 'Integral']
+                                            .map(
+                                              (t) => DropdownMenuItem(
+                                                value: t,
+                                                child: Text(t),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (val) => setState(
+                                          () =>
+                                              _turnoSelecionado = val ?? 'Manhã',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) setState(() => _turno = val);
-                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Foto da chamada *',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F8F3),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: MarsupiTheme.mintBorder,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  _fotoAnexada
+                                      ? Icons.check_circle_outline
+                                      : Icons.file_upload_outlined,
+                                  size: 24,
+                                  color: MarsupiTheme.primaryGreen,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _fotoAnexada
+                                      ? 'Foto selecionada ($_origemFoto)'
+                                      : 'Envie uma foto da lista de alunos',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: MarsupiTheme.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 36,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                MarsupiTheme.primaryGreen,
+                                            foregroundColor: Colors.white,
+                                            elevation: 0,
+                                            padding: EdgeInsets.zero,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          onPressed: () =>
+                                              _selecionarFoto('Galeria'),
+                                          child: Text(
+                                            'Enviar foto',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 36,
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor:
+                                                MarsupiTheme.primaryGreen,
+                                            side: const BorderSide(
+                                              color: Color(0xFFCBD9D0),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          onPressed: () =>
+                                              _selecionarFoto('Câmera'),
+                                          child: Text(
+                                            'Tirar foto',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: MarsupiTheme.primaryGreen,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'JPG ou PNG · até 20 MB',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: const Color(0xFF70877B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'A IA reconhece. Você confere antes de salvar.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: const Color(0xFF70877B),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: MarsupiTheme.primaryGreen,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _avancarParaRevisao,
+                              child: Text(
+                                'Reconhecer nomes',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Bloco Foto da Chamada
-                const Text(
-                  'Foto da chamada *',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
-                ),
-                const SizedBox(height: 8),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: MarsupiColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: MarsupiColors.mintBorder),
-                  ),
-                  child: Column(
-                    children: [
-                      if (_fotoAdicionada) ...[
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: MarsupiColors.mintContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.document_scanner_outlined, color: MarsupiColors.primary, size: 28),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _nomeArquivo,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: MarsupiColors.darkForest),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  const Text(
-                                    '2,4 MB · Foto pronta para OCR',
-                                    style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _fotoAdicionada = false;
-                                });
-                              },
-                              child: const Text('Trocar', style: TextStyle(color: MarsupiColors.primary)),
-                            ),
-                          ],
-                        ),
-                      ] else ...[
-                        const Icon(Icons.camera_alt_outlined, size: 40, color: MarsupiColors.primary),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Envie uma foto da folha de chamada',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'JPG ou PNG até 20 MB',
-                          style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => setState(() {
-                                _fotoAdicionada = true;
-                                _nomeArquivo = 'foto_camera.jpg';
-                              }),
-                              icon: const Icon(Icons.photo_camera, size: 16),
-                              label: const Text('Tirar foto'),
-                            ),
-                            const SizedBox(width: 12),
-                            OutlinedButton.icon(
-                              onPressed: () => setState(() {
-                                _fotoAdicionada = true;
-                                _nomeArquivo = 'chamada_1ano_a.jpg';
-                              }),
-                              icon: const Icon(Icons.upload_file, size: 16),
-                              label: const Text('Galeria'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Card de Dicas de Captura
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: MarsupiColors.mintContainer.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.tips_and_updates_outlined, color: MarsupiColors.primary, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            'Para reconhecer melhor com IA:',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: MarsupiColors.darkForest),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildDicaItem('01 Fotografe a lista inteira sem cortes.'),
-                      _buildDicaItem('02 Utilize um ambiente bem iluminado.'),
-                      _buildDicaItem('03 Evite sombras ou folhas amassadas.'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Botão Avançar
-                ElevatedButton.icon(
-                  onPressed: _avancarParaConfirmacao,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Reconhecer nomes com IA'),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDicaItem(String texto) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Text(
-        texto,
-        style: const TextStyle(fontSize: 12, color: MarsupiColors.darkForest),
       ),
     );
   }
 }
 
-/// ETAPA 2: Conferência dos Nomes Reconhecidos pelo OCR (Figma 277:361)
 class ConfirmarNomesScreen extends StatefulWidget {
-  final String turmaNome;
-  final int anoLetivo;
+  final int? turmaId;
+  final String nomeTurma;
   final String turno;
+  final int anoLetivo;
+  final List<Map<String, dynamic>> nomesIniciais;
 
   const ConfirmarNomesScreen({
     super.key,
-    required this.turmaNome,
-    required this.anoLetivo,
+    this.turmaId,
+    required this.nomeTurma,
     required this.turno,
+    required this.anoLetivo,
+    required this.nomesIniciais,
   });
 
   @override
@@ -344,289 +528,336 @@ class ConfirmarNomesScreen extends StatefulWidget {
 }
 
 class _ConfirmarNomesScreenState extends State<ConfirmarNomesScreen> {
-  List<Map<String, dynamic>> _alunosReconhecidos = [];
-  bool _isLoading = true;
+  late List<Map<String, dynamic>> _alunosOcr;
 
   @override
   void initState() {
     super.initState();
-    _carregarNomesOcr();
+    _alunosOcr = widget.nomesIniciais
+        .map((a) => Map<String, dynamic>.from(a))
+        .toList();
   }
 
-  Future<void> _carregarNomesOcr() async {
-    final list = await MockDataService.instance.getChamadaOcrNomes();
-    if (!mounted) return;
-    setState(() {
-      _alunosReconhecidos = list;
-      _isLoading = false;
-    });
-  }
-
-  void _editarNome(int index) {
-    final controller = TextEditingController(text: _alunosReconhecidos[index]['nome'] as String);
-    showDialog(
+  Future<void> _editarNome(int index) async {
+    final ctrl =
+        TextEditingController(text: _alunosOcr[index]['nome'] as String);
+    final novoNome = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Editar nome'),
+        title: const Text('Conferir nome do estudante'),
         content: TextField(
-          controller: controller,
+          controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome completo do aluno'),
+          decoration: const InputDecoration(
+            labelText: 'Nome completo',
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _alunosReconhecidos[index]['nome'] = controller.text.trim();
-                  _alunosReconhecidos[index]['precisaConferencia'] = false;
-                });
-              }
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Salvar'),
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Confirmar'),
           ),
         ],
       ),
     );
+
+    if (novoNome != null && novoNome.isNotEmpty) {
+      setState(() {
+        _alunosOcr[index]['nome'] = novoNome;
+        _alunosOcr[index]['precisaConferencia'] = false;
+      });
+    }
   }
 
-  void _removerNome(int index) {
-    setState(() {
-      _alunosReconhecidos.removeAt(index);
-    });
-  }
-
-  void _adicionarNomeManual() {
-    final controller = TextEditingController();
-    showDialog(
+  Future<void> _adicionarAlunoExtra() async {
+    final ctrl = TextEditingController();
+    final novoNome = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Adicionar aluno'),
+        title: const Text('Adicionar nome'),
         content: TextField(
-          controller: controller,
+          controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Digite o nome do estudante'),
+          decoration: const InputDecoration(
+            labelText: 'Nome completo',
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _alunosReconhecidos.add({
-                    'nome': controller.text.trim(),
-                    'precisaConferencia': false,
-                  });
-                });
-              }
-              Navigator.of(ctx).pop();
-            },
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
             child: const Text('Adicionar'),
           ),
         ],
       ),
     );
+
+    if (novoNome != null && novoNome.isNotEmpty) {
+      setState(() {
+        _alunosOcr.add({
+          'nome': novoNome,
+          'precisaConferencia': false,
+        });
+      });
+    }
   }
 
-  void _concluirCadastro() async {
-    final nomes = _alunosReconhecidos.map((a) => a['nome'] as String).toList();
+  Future<void> _confirmarTurma() async {
+    final listaFinal = _alunosOcr.map((a) => a['nome'] as String).toList();
 
-    final novaTurma = await showMarsupiLoading(
+    await showMarsupiLoading<void>(
       context,
-      message: 'Salvando turma e criando perfis...',
-      task: () => MockDataService.instance.addTurmaComAlunos(
-        nome: widget.turmaNome,
-        turno: widget.turno,
-        anoLetivo: widget.anoLetivo,
-        nomesAlunos: nomes,
-      ),
+      message: 'Carregando...',
+      task: () async {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (widget.turmaId != null) {
+          await MockDataService.instance.addAlunosNaTurma(
+            turmaId: widget.turmaId!,
+            nomesAlunos: listaFinal,
+          );
+        } else {
+          await MockDataService.instance.addTurmaComAlunos(
+            nome: widget.nomeTurma,
+            turno: widget.turno,
+            anoLetivo: widget.anoLetivo,
+            nomesAlunos: listaFinal,
+          );
+        }
+      },
     );
 
-    if (!mounted || novaTurma == null) return;
-
-    // Remove rotas anteriores até a Home e abre a nova turma
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => TurmaDetailScreen(
-          turmaId: novaTurma['id'] as int,
-          turmaNome: novaTurma['nome'] as String,
-          turno: novaTurma['turno'] as String,
-          totalAlunos: novaTurma['estudantes_count'] as int,
-        ),
-      ),
-      (route) => route.isFirst,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✓ Turma "${widget.turmaNome}" criada com sucesso! ${nomes.length} estudantes cadastrados.'),
-        backgroundColor: MarsupiColors.primary,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    if (!mounted) return;
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Confira os nomes'),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(color: MarsupiColors.primary),
-        ),
-      );
-    }
-
-    final total = _alunosReconhecidos.length;
-    final pendentes = _alunosReconhecidos.where((a) => a['precisaConferencia'] == true).length;
+    final pendentes =
+        _alunosOcr.where((a) => a['precisaConferencia'] == true).length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Confira os nomes'),
-      ),
+      backgroundColor: MarsupiTheme.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: MarsupiColors.mintContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'ETAPA 2 DE 3',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: MarsupiColors.primary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              Text(
-                '$total nomes encontrados',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: MarsupiColors.darkForest,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                pendentes > 0
-                    ? '$pendentes nomes precisam da sua conferência.'
-                    : 'Todos os nomes foram verificados.',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: pendentes > 0 ? MarsupiColors.accentPeach : MarsupiColors.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Lista de Alunos Reconhecidos
-              ..._alunosReconhecidos.asMap().entries.map((entry) {
-                final index = entry.key;
-                final aluno = entry.value;
-                final precisa = aluno['precisaConferencia'] == true;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  elevation: 0,
-                  color: precisa ? const Color(0xFFFFF9ED) : MarsupiColors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: precisa ? MarsupiColors.accentPeach : MarsupiColors.mintBorder,
-                      width: precisa ? 1.5 : 1.0,
+        child: Column(
+          children: [
+            // Top bar idêntica ao Figma (277:599)
+            Container(
+              height: 78,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.white,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Image.asset(
+                      'assets/images/logo_marsupi.png',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.contain,
                     ),
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    leading: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: MarsupiColors.mintContainer,
+                  const Text(
+                    '☰',
+                    style: TextStyle(
+                      fontSize: 22,
+                      color: MarsupiTheme.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
                       child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(
+                        'Minhas turmas / Nova turma',
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: MarsupiColors.darkForest,
+                          color: const Color(0xFF70877B),
                         ),
                       ),
                     ),
-                    title: Text(
-                      aluno['nome'] as String,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Confira os nomes',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: MarsupiTheme.textPrimary,
+                      ),
                     ),
-                    subtitle: Row(
-                      children: [
-                        Icon(
-                          precisa ? Icons.edit_note : Icons.check_circle_outline,
-                          size: 14,
-                          color: precisa ? MarsupiColors.accentPeach : MarsupiColors.primary,
+                    const SizedBox(height: 16),
+                    Text(
+                      'ETAPA 2 DE 2 · CONFERIR E CRIAR',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: MarsupiTheme.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: const LinearProgressIndicator(
+                        value: 240 / 358,
+                        minHeight: 3,
+                        backgroundColor: Color(0xFFDDE7DF),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          MarsupiTheme.primaryGreen,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          precisa ? 'Conferir escrita' : 'Reconhecido',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: precisa ? MarsupiColors.accentPeach : MarsupiColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      '${_alunosOcr.length} nomes encontrados',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: MarsupiTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      alignment: Alignment.centerLeft,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8EEDB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        pendentes > 0
+                            ? 'Confira os $pendentes nomes destacados'
+                            : 'Todos os nomes foram conferidos',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: const Color(0xFF8C6531),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...List.generate(_alunosOcr.length, (index) {
+                      final item = _alunosOcr[index];
+                      final precisa = item['precisaConferencia'] == true;
+                      return GestureDetector(
+                        onTap: () => _editarNome(index),
+                        child: Container(
+                          height: 40,
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: precisa
+                                ? const Color(0xFFFAF3E7)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: precisa
+                                ? Border.all(
+                                    color: MarsupiTheme.amberHighlight,
+                                    width: 1,
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 22,
+                                child: Text(
+                                  '${index + 1}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: const Color(0xFF70877B),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  item['nome'] as String,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    color: MarsupiTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                precisa ? '✎' : '✓',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: MarsupiTheme.primaryGreen,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 20, color: MarsupiColors.darkForest),
-                          onPressed: () => _editarNome(index),
-                          tooltip: 'Editar',
+                      );
+                    }),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: _adicionarAlunoExtra,
+                      child: Text(
+                        '+ Adicionar nome',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: MarsupiTheme.primaryGreen,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                          onPressed: () => _removerNome(index),
-                          tooltip: 'Remover',
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _adicionarNomeManual,
-                icon: const Icon(Icons.add),
-                label: const Text('Adicionar nome manualmente'),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MarsupiTheme.primaryGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: _confirmarTurma,
+                        child: Text(
+                          'Confirmar ${_alunosOcr.length} alunos',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Text(
+                          'Voltar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: MarsupiTheme.primaryGreen,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-
-              // Botão Confirmar Turma
-              ElevatedButton.icon(
-                onPressed: _alunosReconhecidos.isEmpty ? null : _concluirCadastro,
-                icon: const Icon(Icons.check),
-                label: Text('Confirmar $total alunos e criar turma'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

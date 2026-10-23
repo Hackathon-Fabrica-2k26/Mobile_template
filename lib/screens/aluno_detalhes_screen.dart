@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
-import 'aluno_pei_screen.dart';
 
 class AlunoDetalhesScreen extends StatefulWidget {
   final Map<String, dynamic> aluno;
@@ -23,124 +23,132 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final nome = widget.aluno['nome'] as String? ?? 'Estudante';
-    final matricula = widget.aluno['matricula'] as String? ?? '-';
-    final nascimento = widget.aluno['nascimento'] as String? ?? '-';
-    final status = widget.aluno['status'] as String? ?? 'Aluno ativo';
-    final acompanhamento = widget.aluno['acompanhamento'] as String? ?? 'Sem observações registradas ainda.';
+    final nome = (widget.aluno['nome'] as String?) ?? '';
+    final matricula = (widget.aluno['matricula'] as String?) ?? '';
+    final nascimento = (widget.aluno['nascimento'] as String?) ?? '';
+    final status = (widget.aluno['status'] as String?) ?? 'Aluno ativo';
+    final acompanhamento = (widget.aluno['acompanhamento'] as String?) ?? '';
     final atividades = (widget.aluno['atividades'] as List<dynamic>? ?? []);
-    final radar = widget.aluno['radar_metrics'] as Map<String, dynamic>?;
 
     return Scaffold(
-      backgroundColor: MarsupiColors.background,
-      appBar: AppBar(
-        backgroundColor: MarsupiColors.background,
-        elevation: 0,
-        title: const Text(
-          'Detalhes do aluno',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: MarsupiColors.darkForest,
-          ),
-        ),
-        automaticallyImplyLeading: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: MarsupiColors.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: MarsupiColors.mintBorder),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.close, color: MarsupiColors.darkForest, size: 20),
-                onPressed: () => Navigator.of(context).pop(),
-                tooltip: 'Fechar',
-              ),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: MarsupiTheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header do Aluno (Figma: foto à esquerda com "Adicionar foto" abaixo, dados à direita)
+              // Cabeçalho Mobile / Detalhes do aluno (Figma 326:77)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Detalhes do aluno',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: MarsupiTheme.textPrimary,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFB7CBBF),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: MarsupiTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // Avatar + Adicionar foto + Nome + Turma + Status (Figma 326:77)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Column(
                     children: [
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 76,
+                        height: 76,
                         decoration: BoxDecoration(
-                          color: MarsupiColors.mintContainer.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: MarsupiColors.mintBorder, width: 1.5),
+                          color: const Color(0xFFEBF2EC),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFFB7CBBF),
+                            width: 1.5,
+                          ),
                         ),
                         child: const Icon(
                           Icons.person_outline,
-                          size: 46,
-                          color: MarsupiColors.primary,
+                          size: 38,
+                          color: MarsupiTheme.primaryGreen,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Upload de foto do estudante acionado.'),
-                              backgroundColor: MarsupiColors.primary,
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Adicionar foto',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: MarsupiColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Text(
+                        'Adicionar foto',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: MarsupiTheme.primaryGreen,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(width: 18),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 2),
                         Text(
                           nome,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: MarsupiColors.darkForest,
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: MarsupiTheme.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${widget.turmaNome} · ${widget.turno}',
-                          style: const TextStyle(fontSize: 13, color: MarsupiColors.textMuted),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: const Color(0xFF526D65),
+                          ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          alignment: Alignment.center,
+                          width: 98,
                           decoration: BoxDecoration(
-                            color: MarsupiColors.mintContainer,
+                            color: const Color(0xFFDDECE1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             status,
-                            style: const TextStyle(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
                               fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: MarsupiColors.primary,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.primaryGreen,
                             ),
                           ),
                         ),
@@ -149,47 +157,101 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Matrícula e Nascimento (duas colunas conforme Figma)
+              // Caixas Matrícula e Nascimento (Figma 326:77)
               Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Matrícula', style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted)),
-                        const SizedBox(height: 2),
-                        Text(
-                          matricula,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                    child: Container(
+                      height: 52,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFDCE6DF),
+                          width: 1.2,
                         ),
-                      ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Matrícula',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: const Color(0xFF70877B),
+                            ),
+                          ),
+                          Text(
+                            matricula,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Nascimento', style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted)),
-                        const SizedBox(height: 2),
-                        Text(
-                          nascimento,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                    child: Container(
+                      height: 52,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFDCE6DF),
+                          width: 1.2,
                         ),
-                      ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Nascimento',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: const Color(0xFF70877B),
+                            ),
+                          ),
+                          Text(
+                            nascimento,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Segmented Toggle Pill (Figma: [ Visão geral ] [ Registros ])
+              // Segmented Toggle: Visão geral / Registros (Figma 326:77)
               Container(
-                padding: const EdgeInsets.all(4),
+                height: 36,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: MarsupiColors.mintContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFE7EFE9),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
@@ -197,27 +259,23 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                       child: GestureDetector(
                         onTap: () => setState(() => _tabIndex = 0),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: _tabIndex == 0 ? Colors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _tabIndex == 0
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
+                            color: _tabIndex == 0
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Visão geral',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: _tabIndex == 0 ? MarsupiColors.primary : MarsupiColors.textMuted,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: _tabIndex == 0
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                              color: _tabIndex == 0
+                                  ? MarsupiTheme.primaryGreen
+                                  : const Color(0xFF526D65),
                             ),
                           ),
                         ),
@@ -227,27 +285,23 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                       child: GestureDetector(
                         onTap: () => setState(() => _tabIndex = 1),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: _tabIndex == 1 ? Colors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _tabIndex == 1
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
+                            color: _tabIndex == 1
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Registros',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: _tabIndex == 1 ? MarsupiColors.primary : MarsupiColors.textMuted,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: _tabIndex == 1
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                              color: _tabIndex == 1
+                                  ? MarsupiTheme.primaryGreen
+                                  : const Color(0xFF526D65),
                             ),
                           ),
                         ),
@@ -256,250 +310,194 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              if (_tabIndex == 0) ...[
-                // Seção Acompanhamento (Figma)
-                const Text(
-                  'Acompanhamento',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: MarsupiColors.darkForest,
+              // Acompanhamento (Figma 326:77)
+              Text(
+                'Acompanhamento',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: MarsupiTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFDCE6DF),
+                    width: 1.2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
+                child: Text(
                   acompanhamento,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: MarsupiColors.darkForest,
-                    height: 1.5,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF526D65),
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
 
-                // Radar de Habilidades & Desafios IA
-                if (radar != null && radar.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: MarsupiColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: MarsupiColors.mintBorder),
+              // Atividades (Figma 326:77)
+              Text(
+                'Atividades (${atividades.length})',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: MarsupiTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              ...atividades.map((item) {
+                final ativ = Map<String, dynamic>.from(item as Map);
+                final titulo = (ativ['titulo'] as String?) ?? '';
+                final dataEnvio = (ativ['data_envio'] as String?) ?? '';
+                final observacao = (ativ['observacao'] as String?) ?? '';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFDCE6DF),
+                      width: 1.2,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.auto_awesome, color: MarsupiColors.accentPeach, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Radar de Habilidades & Desafios (IA)',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        ...radar.entries.map((entry) {
-                          final val = (entry.value as num).toInt();
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.description_outlined,
+                            color: MarsupiTheme.primaryGreen,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(entry.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                    Text('$val%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: MarsupiColors.primary)),
-                                  ],
+                                Text(
+                                  titulo,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: MarsupiTheme.textPrimary,
+                                  ),
                                 ),
-                                const SizedBox(height: 4),
-                                LinearProgressIndicator(
-                                  value: val / 100,
-                                  backgroundColor: MarsupiColors.mintContainer,
-                                  color: val < 50 ? MarsupiColors.accentPeach : MarsupiColors.primary,
-                                  borderRadius: BorderRadius.circular(4),
-                                  minHeight: 6,
+                                Text(
+                                  dataEnvio,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: const Color(0xFF70877B),
+                                  ),
                                 ),
                               ],
                             ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-
-                // Seção Atividades (Figma)
-                Text(
-                  'Atividades (${atividades.length})',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: MarsupiColors.darkForest,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                if (atividades.isEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: MarsupiColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: MarsupiColors.mintBorder),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Nenhuma atividade registrada para este estudante.',
-                        style: TextStyle(fontSize: 13, color: MarsupiColors.textMuted),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ] else ...[
-                  ...atividades.map((item) {
-                    final ativ = Map<String, dynamic>.from(item as Map);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: _buildAtividadeCard(
-                        titulo: ativ['titulo'] as String? ?? 'Atividade',
-                        dataEnvio: ativ['data_envio'] as String? ?? '',
-                        observacao: ativ['observacao'] as String? ?? '',
-                      ),
-                    );
-                  }),
-                ],
-                const SizedBox(height: 24),
-
-                // Rodapé de Exportação e Ações
-                if (atividades.isNotEmpty) ...[
-                  Center(
-                    child: Text(
-                      'Exporte os relatórios das ${atividades.length} atividades.',
-                      style: const TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('📥 Exportando relatórios consolidados em PDF...'),
-                          backgroundColor: MarsupiColors.primary,
-                        ),
-                      );
-                    },
-                    child: const Text('Exportar todas as atividades'),
-                  ),
-                ],
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => AlunoPeiScreen(
-                          alunoId: (widget.aluno['id'] as num?)?.toInt() ?? 101,
-                          alunoNome: nome,
+                      const SizedBox(height: 6),
+                      Text(
+                        observacao,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: const Color(0xFF526D65),
                         ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.description_outlined, size: 18),
-                  label: const Text('Abrir Rascunho de PEI e Código'),
-                ),
-              ] else ...[
-                // Aba Registros
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: MarsupiColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: MarsupiColors.mintBorder),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.history_edu_outlined, size: 40, color: MarsupiColors.primary),
-                      SizedBox(height: 12),
-                      Text(
-                        'Histórico de Registros Pedagógicos',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      const SizedBox(height: 8),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE6EDE7),
                       ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Nenhum registro pendente. Todos os relatórios foram consolidados.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.file_download_outlined,
+                            size: 14,
+                            color: MarsupiTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Exportar relatório',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: MarsupiTheme.primaryGreen,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                );
+              }),
 
-  Widget _buildAtividadeCard({
-    required String titulo,
-    required String dataEnvio,
-    required String observacao,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: MarsupiColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MarsupiColors.mintBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.article_outlined, color: MarsupiColors.primary, size: 24),
-              const SizedBox(width: 10),
-              Expanded(
+              const SizedBox(height: 4),
+
+              // Card final Exportar todas as atividades (Figma 326:77)
+              Container(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEBF2EC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFD5E1D7),
+                    width: 1.2,
+                  ),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    const SizedBox(height: 2),
-                    Text(dataEnvio, style: const TextStyle(fontSize: 12, color: MarsupiColors.textMuted)),
+                    Text(
+                      'Exporte os relatórios das ${atividades.length} atividades.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: const Color(0xFF526D65),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 36,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MarsupiTheme.primaryGreen,
+                          foregroundColor: MarsupiTheme.background,
+                          elevation: 0,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {},
+                        child: Text(
+                          'Exportar todas as atividades',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: MarsupiTheme.background,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(observacao, style: const TextStyle(fontSize: 13, color: MarsupiColors.darkForest)),
-          const Divider(height: 20, color: MarsupiColors.mintBorder),
-          GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('📥 Exportando relatório: $titulo'),
-                  backgroundColor: MarsupiColors.primary,
-                ),
-              );
-            },
-            child: const Row(
-              children: [
-                Icon(Icons.download, size: 16, color: MarsupiColors.primary),
-                SizedBox(width: 6),
-                Text(
-                  'Exportar relatório',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: MarsupiColors.primary),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

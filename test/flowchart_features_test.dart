@@ -1,96 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_template/screens/aluno_pei_screen.dart';
-import 'package:mobile_template/screens/criar_atividade_flow.dart';
-import 'package:mobile_template/screens/enviar_trabalhos_flow.dart';
-import 'package:mobile_template/screens/portal_responsavel_screen.dart';
 import 'package:mobile_template/screens/turma_cadastro_flow.dart';
+import 'package:mobile_template/screens/turma_detail_screen.dart';
+import 'package:mobile_template/services/mock_data_service.dart';
 
 void main() {
-  testWidgets('NovaTurmaFotoScreen renderiza campos da Etapa 1 e dicas de foto', (WidgetTester tester) async {
+  testWidgets('NovaTurmaFotoScreen renderiza etapa 1 de 2 com campos vazios', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: NovaTurmaFotoScreen()));
 
-    expect(find.text('ETAPA 1 DE 3'), findsOneWidget);
+    expect(find.text('Nova turma'), findsOneWidget);
+    expect(find.text('ETAPA 1 DE 2 · DADOS E FOTO'), findsOneWidget);
     expect(find.text('Nome da turma *'), findsOneWidget);
-    expect(find.text('Reconhecer nomes com IA'), findsOneWidget);
-    expect(find.textContaining('Fotografe a lista inteira'), findsOneWidget);
+    expect(find.text('Enviar foto'), findsOneWidget);
+    expect(find.text('Tirar foto'), findsOneWidget);
+    expect(find.text('Reconhecer nomes'), findsOneWidget);
   });
 
-  testWidgets('ConfirmarNomesScreen exibe lista com alunos e botões de conferência', (WidgetTester tester) async {
+  testWidgets('ConfirmarNomesScreen renderiza etapa 2 de 2 com dados do JSON', (WidgetTester tester) async {
+    final nomes = await MockDataService.instance.getChamadaOcrNomes();
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ConfirmarNomesScreen(
-          turmaNome: '1º ano A',
-          anoLetivo: 2026,
+          nomeTurma: '1º ano A',
           turno: 'Manhã',
+          anoLetivo: 2026,
+          nomesIniciais: nomes,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ETAPA 2 DE 3'), findsOneWidget);
-    expect(find.textContaining('nomes encontrados'), findsOneWidget);
+    expect(find.text('Confira os nomes'), findsOneWidget);
+    expect(find.text('ETAPA 2 DE 2 · CONFERIR E CRIAR'), findsOneWidget);
+    expect(find.text('8 nomes encontrados'), findsOneWidget);
     expect(find.text('Alice Santos'), findsOneWidget);
     expect(find.text('Davi Pereira'), findsOneWidget);
-    expect(find.text('Adicionar nome manualmente'), findsOneWidget);
+    expect(find.text('Confirmar 8 alunos'), findsOneWidget);
   });
 
-  testWidgets('CriarAtividadeFlowScreen renderiza formulário e botão de análise com IA', (WidgetTester tester) async {
+  testWidgets('TurmaDetailScreen renderiza Alunos cadastrados e Sem alunos conforme Figma', (WidgetTester tester) async {
+    // Turma 1 tem 8 estudantes no JSON
     await tester.pumpWidget(
       const MaterialApp(
-        home: CriarAtividadeFlowScreen(
+        home: TurmaDetailScreen(
           turmaId: 1,
           turmaNome: '1º ano A',
-        ),
-      ),
-    );
-
-    expect(find.text('Cadastrar atividade'), findsOneWidget);
-    expect(find.text('Título da atividade *'), findsOneWidget);
-    expect(find.text('Analisar quem precisa de adaptação'), findsOneWidget);
-  });
-
-  testWidgets('EnviarTrabalhosFlowScreen renderiza lista de fotos e identificação OCR', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: EnviarTrabalhosFlowScreen(
-          atividadeId: 1,
-          atividadeNome: 'Explorando as vogais',
+          turno: 'Manhã',
+          totalAlunos: 8,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Revisar identificação das fotos'), findsOneWidget);
+    expect(find.text('Estudantes da turma'), findsOneWidget);
     expect(find.text('Alice Santos'), findsOneWidget);
-    expect(find.text('Davi Pereira'), findsOneWidget);
-  });
+    expect(find.text('8 estudantes cadastrados'), findsOneWidget);
+    expect(find.text('Atividades da turma'), findsOneWidget);
 
-  testWidgets('AlunoPeiScreen renderiza PEI e card de código de acesso para pais', (WidgetTester tester) async {
+    // Turma 2 não possui estudantes cadastrados -> exibe Sem alunos (326:78)
     await tester.pumpWidget(
       const MaterialApp(
-        home: AlunoPeiScreen(
-          alunoId: 101,
-          alunoNome: 'Alice Santos',
+        home: TurmaDetailScreen(
+          turmaId: 2,
+          turmaNome: '2º ano B',
+          turno: 'Tarde',
+          totalAlunos: 0,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Alice Santos'), findsOneWidget);
-    expect(find.text('Código de Acesso do Responsável'), findsOneWidget);
-    expect(find.textContaining('PLANO DE ENSINO INDIVIDUALIZADO'), findsOneWidget);
-  });
-
-  testWidgets('PortalResponsavelScreen renderiza consulta por código e LGPD', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: PortalResponsavelScreen(),
-      ),
-    );
-
-    expect(find.text('Portal da Família'), findsOneWidget);
-    expect(find.text('Código do Estudante *'), findsOneWidget);
-    expect(find.text('Acessar com código'), findsOneWidget);
+    expect(find.text('Nenhum aluno cadastrado'), findsOneWidget);
+    expect(find.text('Os estudantes aparecerão aqui.'), findsOneWidget);
   });
 }

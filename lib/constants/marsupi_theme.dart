@@ -10,11 +10,17 @@ class MarsupiColors {
   static const Color accentPeach = Color(0xFFE3B477);
   static const Color sage = Color(0xFFA9C7B4);
   static const Color mintContainer = Color(0xFFEBF2EC);
-  static const Color mintBorder = Color(0xFFD2E4D9);
+  static const Color mintBorder = Color(0xFFA9C7B4);
   static const Color textMuted = Color(0xFF526D65);
 }
 
 class MarsupiTheme {
+  static const Color primaryGreen = MarsupiColors.primary;
+  static const Color textPrimary = MarsupiColors.darkForest;
+  static const Color background = MarsupiColors.background;
+  static const Color mintBorder = MarsupiColors.mintBorder;
+  static const Color amberHighlight = MarsupiColors.accentPeach;
+
   static ThemeData get theme {
     return ThemeData(
       useMaterial3: true,
@@ -43,28 +49,32 @@ class MarsupiTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: MarsupiColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: MarsupiColors.background,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          color: MarsupiColors.textMuted,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: MarsupiColors.mintBorder),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: MarsupiColors.mintBorder, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: MarsupiColors.mintBorder),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: MarsupiColors.mintBorder, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: MarsupiColors.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: MarsupiColors.primary, width: 1.8),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: MarsupiColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: MarsupiColors.background,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           textStyle: const TextStyle(

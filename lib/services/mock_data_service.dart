@@ -9,23 +9,9 @@ class MockDataService {
 
   Future<Map<String, dynamic>> _loadData() async {
     if (_cachedData != null) return _cachedData!;
-    try {
-      final jsonString = await rootBundle.loadString('assets/data/mock_data.json');
-      _cachedData = jsonDecode(jsonString) as Map<String, dynamic>;
-      return _cachedData!;
-    } catch (_) {
-      return {
-        'user': {
-          'nome': 'Ana Paula',
-          'matricula': 'PROF2026',
-          'email': 'ana.professora@escola.edu.br',
-          'avatar': 'AP',
-        },
-        'turmas': [],
-        'alunos': [],
-        'atividades': [],
-      };
-    }
+    final jsonString = await rootBundle.loadString('assets/data/mock_data.json');
+    _cachedData = jsonDecode(jsonString) as Map<String, dynamic>;
+    return _cachedData!;
   }
 
   Future<Map<String, dynamic>> getUser() async {
@@ -66,13 +52,6 @@ class MockDataService {
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  /// Retorna os modelos de submissão de trabalhos a partir do JSON
-  Future<List<Map<String, dynamic>>> getTrabalhosTemplate() async {
-    final data = await _loadData();
-    final list = data['trabalhos_submissao_template'] as List<dynamic>? ?? [];
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
-
   /// Retorna a lista de arquivos de exemplo para upload a partir do JSON
   Future<List<Map<String, String>>> getArquivosExemplo() async {
     final data = await _loadData();
@@ -101,7 +80,6 @@ class MockDataService {
   }) async {
     final data = await _loadData();
     final turmas = (data['turmas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final alunos = (data['alunos'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
 
     final newTurmaId = turmas.isEmpty
         ? 1
@@ -116,118 +94,74 @@ class MockDataService {
       'icon': 'book',
     };
     turmas.insert(0, novaTurma);
+    _cachedData!['turmas'] = turmas;
+
+    if (nomesAlunos.isNotEmpty) {
+      await addAlunosNaTurma(turmaId: newTurmaId, nomesAlunos: nomesAlunos);
+    }
+
+    return novaTurma;
+  }
+
+  /// Adiciona uma lista de alunos (reconhecidos via foto da chamada) a uma turma existente
+  Future<void> addAlunosNaTurma({
+    required int turmaId,
+    required List<String> nomesAlunos,
+  }) async {
+    final data = await _loadData();
+    final turmas = (data['turmas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final alunos = (data['alunos'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final padrao = (data['aluno_padrao_template'] as Map<String, dynamic>?) ?? {};
 
     int nextAlunoId = alunos.isEmpty
         ? 100
         : (alunos.map((a) => (a['id'] as num).toInt()).reduce((a, b) => a > b ? a : b) + 1);
 
     for (final nomeAluno in nomesAlunos) {
-      final initial = nomeAluno.trim().isNotEmpty ? nomeAluno.trim()[0].toUpperCase() : 'A';
+      final cleanName = nomeAluno.trim();
+      final initial = cleanName.isNotEmpty ? cleanName[0].toUpperCase() : 'A';
+      final templateMatch = alunos.cast<Map<String, dynamic>?>().firstWhere(
+            (a) => (a?['nome'] as String?)?.toLowerCase() == cleanName.toLowerCase(),
+            orElse: () => null,
+          );
+
       alunos.add({
         'id': nextAlunoId,
-        'turma_id': newTurmaId,
-        'nome': nomeAluno.trim(),
+        'turma_id': turmaId,
+        'nome': cleanName,
         'avatar': initial,
         'matricula': 'AL-2026-0$nextAlunoId',
-        'nascimento': '10/05/2019 · 7 anos',
-        'status': 'Reconhecido via foto da chamada',
+        'nascimento': templateMatch?['nascimento'] ?? padrao['nascimento'] ?? '',
+        'status': templateMatch?['status'] ?? padrao['status'] ?? '',
         'precisa_conferencia': false,
-        'perfil_disc': 'Em mapeamento inicial',
-        'radar_metrics': {
-          'Foco sustentado': 60,
-          'Raciocínio visual': 75,
-          'Interação social': 70,
-          'Regulação sensorial': 65,
-          'Coordenação fina': 60,
-        },
-        'strengths': [
-          'Excelente receptividade e engajamento em sala',
-        ],
-        'support_needs': [
-          'Acompanhamento inicial de adaptação curricular',
-        ],
-        'dica_autonomia': 'Estimule a participação oral com apoio visual prévio.',
-        'codigo_acesso': 'MARS-${(nextAlunoId * 37) % 9000 + 1000}',
-        'atividades': <Map<String, dynamic>>[],
+        'acompanhamento': templateMatch?['acompanhamento'] ?? padrao['acompanhamento'] ?? '',
+        'atividades': templateMatch?['atividades'] != null
+            ? List<Map<String, dynamic>>.from(
+                (templateMatch!['atividades'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+              )
+            : <Map<String, dynamic>>[],
       });
       nextAlunoId++;
     }
 
-    _cachedData!['turmas'] = turmas;
-    _cachedData!['alunos'] = alunos;
-    return novaTurma;
-  }
-
-  /// Cadastra um aluno avulso na turma indicada
-  Future<Map<String, dynamic>> cadastrarAluno({
-    required int turmaId,
-    required String nome,
-    String? nascimento,
-    String? matricula,
-  }) async {
-    final data = await _loadData();
-    final alunos = (data['alunos'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final turmas = (data['turmas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-
-    final nextId = alunos.isEmpty
-        ? 101
-        : (alunos.map((a) => (a['id'] as num).toInt()).reduce((a, b) => a > b ? a : b) + 1);
-
-    final cleanNome = nome.trim();
-    final initial = cleanNome.isNotEmpty ? cleanNome[0].toUpperCase() : 'A';
-    final cleanMatricula = matricula?.trim().isNotEmpty == true ? matricula!.trim() : 'AL-2026-0$nextId';
-    final cleanNascimento = nascimento?.trim().isNotEmpty == true ? nascimento!.trim() : '10/05/2019 · 7 anos';
-
-    final novoAluno = {
-      'id': nextId,
-      'turma_id': turmaId,
-      'nome': cleanNome,
-      'avatar': initial,
-      'matricula': cleanMatricula,
-      'nascimento': cleanNascimento,
-      'status': 'Aluno ativo',
-      'precisa_conferencia': false,
-      'acompanhamento': 'Cadastrado recentemente. Acompanhando adaptação inicial.',
-      'perfil_disc': 'Em observação',
-      'radar_metrics': {
-        'Foco sustentado': 60,
-        'Raciocínio visual': 70,
-        'Interação social': 70,
-        'Regulação sensorial': 60,
-        'Coordenação fina': 65,
-      },
-      'strengths': [
-        'Boa receptividade às rotinas de sala',
-      ],
-      'support_needs': [
-        'Avaliação diagnóstica inicial em andamento',
-      ],
-      'dica_autonomia': 'Acompanhe a interação inicial em pequenos grupos.',
-      'codigo_acesso': 'MARS-${(nextId * 37) % 9000 + 1000}',
-      'atividades': <Map<String, dynamic>>[],
-    };
-
-    alunos.add(novoAluno);
-
-    for (var t in turmas) {
+    final totalDaTurma = alunos.where((a) => a['turma_id'] == turmaId).length;
+    for (final t in turmas) {
       if (t['id'] == turmaId) {
-        t['estudantes_count'] = ((t['estudantes_count'] as int? ?? 0) + 1);
+        t['estudantes_count'] = totalDaTurma;
         break;
       }
     }
 
     _cachedData!['alunos'] = alunos;
     _cachedData!['turmas'] = turmas;
-    return novoAluno;
   }
 
-  /// Adiciona uma atividade com sua versão geral e versões adaptadas geradas por IA
-  Future<Map<String, dynamic>> addAtividadeComAdaptacoes({
+  /// Adiciona uma atividade enviada na turma
+  Future<Map<String, dynamic>> addAtividade({
     required int turmaId,
     required String nome,
-    required String tipo,
-    required String descricao,
-    required Map<String, String> adaptacoesPorAluno,
+    String? dataAtividade,
+    String? observacoes,
   }) async {
     final data = await _loadData();
     final atividades = (data['atividades'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
@@ -239,73 +173,12 @@ class MockDataService {
       'id': newId,
       'turma_id': turmaId,
       'nome': nome,
-      'tipo': tipo,
-      'descricao': descricao,
+      'data': dataAtividade ?? '',
+      'descricao': observacoes ?? '',
       'relatorios_count': 0,
-      'adaptacoes': adaptacoesPorAluno,
-      'pontos_atencao': <String>[],
     };
     atividades.insert(0, novaAtividade);
     _cachedData!['atividades'] = atividades;
     return novaAtividade;
-  }
-
-  /// Processa o upload de fotos dos trabalhos dos alunos e atualiza relatórios/pontos de atenção
-  Future<void> processarTrabalhosPorFoto({
-    required int atividadeId,
-    required List<Map<String, dynamic>> trabalhosConfirmados,
-  }) async {
-    final data = await _loadData();
-    final atividades = (data['atividades'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    for (var ativ in atividades) {
-      if (ativ['id'] == atividadeId) {
-        ativ['relatorios_count'] = ((ativ['relatorios_count'] as int? ?? 0) + trabalhosConfirmados.length);
-        ativ['pontos_atencao'] = [
-          'Atenção à coordenação motora fina no traçado de letras cursivas.',
-          'Excelente desempenho no raciocínio visual e associação de figuras.',
-        ];
-        break;
-      }
-    }
-  }
-
-  /// Consulta estudante pelo código de acesso da família
-  Future<Map<String, dynamic>?> getAlunoPorCodigo(String codigo) async {
-    final alunos = await getAlunos();
-    final cleanCode = codigo.trim().toUpperCase();
-    for (final a in alunos) {
-      final alunoCod = (a['codigo_acesso'] as String?)?.toUpperCase() ?? 'MARS-${a['id']}';
-      if (alunoCod == cleanCode || cleanCode == 'MARS-2026' || cleanCode == 'MARS-101') {
-        return a;
-      }
-    }
-    if (cleanCode.isNotEmpty && alunos.isNotEmpty) {
-      return alunos.first;
-    }
-    return null;
-  }
-
-  /// Gera rascunho de PEI e Parecer Pedagógico para um estudante
-  Future<Map<String, dynamic>> gerarPEI(int alunoId) async {
-    final alunos = await getAlunos();
-    final aluno = alunos.firstWhere((a) => a['id'] == alunoId, orElse: () => alunos.first);
-    final nome = aluno['nome'] ?? 'Estudante';
-
-    return {
-      'aluno': nome,
-      'ano': '1º Ano do Ensino Fundamental',
-      'data_emissao': 'Outubro / 2026',
-      'metas_trimestrais': [
-        'Consolidar a identificação fonema-grafema com apoio de pistas multissensoriais.',
-        'Desenvolver autorregulação durante transições de aula com suporte de agenda visual.',
-        'Estimular a autonomia na organização de materiais e tarefas coletivas.',
-      ],
-      'acomodacoes_pedagogicas': [
-        'Tempo adicional (25%) para realização de atividades escritas.',
-        'Pausas de autorregulação sensorial a cada 20 minutos de foco intenso.',
-        'Enunciados fracionados e apoio visual concreto para compreensão de comandos.',
-      ],
-      'parecer_conselho': 'O estudante apresenta ótimo engajamento em dinâmicas visuais e colaborativas. Observa-se evolução significativa nas competências de raciocínio. Recomenda-se a continuidade do suporte inclusivo em parceria com os responsáveis.',
-    };
   }
 }

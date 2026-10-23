@@ -1,65 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 
-/// Diálogo modal de carregamento para transições assíncronas entre telas
+/// Tela de carregamento exibida entre transições assíncronas de páginas (Figma 125:96)
 Future<T?> showMarsupiLoading<T>(
   BuildContext context, {
   String message = 'Carregando...',
   required Future<T> Function() task,
 }) async {
-  showDialog(
+  showGeneralDialog(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-          decoration: BoxDecoration(
-            color: MarsupiColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/canguru_simbolo.png',
-                height: 80,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: MarsupiColors.darkForest,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildDot(MarsupiColors.primary),
-                  const SizedBox(width: 6),
-                  _buildDot(MarsupiColors.sage),
-                  const SizedBox(width: 6),
-                  _buildDot(MarsupiColors.accentPeach),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    barrierColor: MarsupiTheme.background,
+    pageBuilder: (ctx, anim1, anim2) => Scaffold(
+      backgroundColor: MarsupiTheme.background,
+      body: MarsupiLoadingView(message: message),
     ),
   );
 
@@ -79,8 +34,8 @@ Future<T?> showMarsupiLoading<T>(
 
 Widget _buildDot(Color color) {
   return Container(
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
@@ -88,7 +43,7 @@ Widget _buildDot(Color color) {
   );
 }
 
-/// Widget reutilizável para estados de carregamento em tela
+/// Widget reutilizável idêntico ao frame Mobile / Carregamento (Figma 125:96)
 class MarsupiLoadingView extends StatelessWidget {
   final String message;
 
@@ -102,27 +57,28 @@ class MarsupiLoadingView extends StatelessWidget {
         children: [
           Image.asset(
             'assets/images/canguru_simbolo.png',
-            height: 110,
+            width: 128,
+            height: 152,
             fit: BoxFit.contain,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: MarsupiColors.darkForest,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: MarsupiTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildDot(MarsupiColors.primary),
-              const SizedBox(width: 6),
-              _buildDot(MarsupiColors.sage),
-              const SizedBox(width: 6),
-              _buildDot(MarsupiColors.accentPeach),
+              _buildDot(MarsupiTheme.primaryGreen),
+              const SizedBox(width: 10),
+              _buildDot(MarsupiTheme.mintBorder),
+              const SizedBox(width: 10),
+              _buildDot(MarsupiTheme.amberHighlight),
             ],
           ),
         ],

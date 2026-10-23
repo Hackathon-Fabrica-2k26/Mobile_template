@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/mock_data_service.dart';
 import 'home_screen.dart';
@@ -45,8 +46,8 @@ class _OtpScreenState extends State<OtpScreen> {
     if (parts.length != 2) return email;
     final name = parts[0];
     final domain = parts[1];
-    if (name.length <= 2) return '$name***@$domain';
-    return '${name[0]}***${name[name.length - 1]}@$domain';
+    if (name.isEmpty) return '***@$domain';
+    return '${name[0]}***@$domain';
   }
 
   Future<void> _verifyOtp() async {
@@ -63,7 +64,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     final success = await showMarsupiLoading<bool>(
       context,
-      message: 'Confirmando seu acesso...',
+      message: 'Carregando...',
       task: () => MockDataService.instance.verifyOtp(code),
     );
 
@@ -77,93 +78,92 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filledCount = _controllers.where((c) => c.text.trim().isNotEmpty).length;
+
     return Scaffold(
+      backgroundColor: MarsupiTheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Voltar
+              const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back, size: 18, color: MarsupiColors.primary),
-                  label: const Text(
-                    'Voltar',
-                    style: TextStyle(
-                      color: MarsupiColors.primary,
-                      fontWeight: FontWeight.w600,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Text(
+                    '← Voltar',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: MarsupiTheme.primaryGreen,
                     ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
                   ),
                 ),
               ),
-              const SizedBox(height: 36),
-
-              // Título
-              const Text(
+              const SizedBox(height: 44),
+              Text(
                 'Confirme seu acesso',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: MarsupiColors.darkForest,
+                  fontWeight: FontWeight.w600,
+                  color: MarsupiTheme.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Subtítulo e link
+              Text(
+                'Digite o código de 4 dígitos enviado para',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: MarsupiTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
                 children: [
-                  const Text(
-                    'Digite o código de 4 dígitos enviado para ',
-                    style: TextStyle(fontSize: 14, color: MarsupiColors.textMuted),
-                  ),
                   Text(
                     _maskedEmail,
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: MarsupiColors.darkForest,
+                      fontWeight: FontWeight.w600,
+                      color: MarsupiTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 6),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: const Text(
+                    child: Text(
                       'Alterar e-mail',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: MarsupiColors.primary,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: MarsupiTheme.primaryGreen,
                         decoration: TextDecoration.underline,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-
-              const Text(
+              const SizedBox(height: 36),
+              Text(
                 'Código de verificação',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: MarsupiColors.darkForest,
+                  fontWeight: FontWeight.w500,
+                  color: MarsupiTheme.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
-
-              // 4 Caixas de PIN
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(4, (index) {
+                  final hasValue = _controllers[index].text.isNotEmpty;
                   return SizedBox(
-                    width: 68,
+                    width: 76,
                     height: 72,
                     child: TextFormField(
                       controller: _controllers[index],
@@ -171,27 +171,29 @@ class _OtpScreenState extends State<OtpScreen> {
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       maxLength: 1,
-                      style: const TextStyle(
+                      style: GoogleFonts.poppins(
                         fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: MarsupiColors.darkForest,
+                        fontWeight: FontWeight.w600,
+                        color: MarsupiTheme.textPrimary,
                       ),
                       decoration: InputDecoration(
                         counterText: '',
+                        filled: true,
+                        fillColor: MarsupiTheme.background,
                         contentPadding: EdgeInsets.zero,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: _controllers[index].text.isNotEmpty
-                                ? MarsupiColors.primary
-                                : MarsupiColors.mintBorder,
-                            width: 1.5,
+                            color: hasValue
+                                ? MarsupiTheme.primaryGreen
+                                : MarsupiTheme.mintBorder,
+                            width: hasValue ? 2.0 : 1.5,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                            color: MarsupiColors.primary,
+                            color: MarsupiTheme.primaryGreen,
                             width: 2.0,
                           ),
                         ),
@@ -208,55 +210,59 @@ class _OtpScreenState extends State<OtpScreen> {
                   );
                 }),
               ),
-              const SizedBox(height: 20),
-
-              // Linha suave de progresso com pontinhos (do design Figma)
-              Center(
+              const SizedBox(height: 18),
+              SizedBox(
+                height: 20,
                 child: CustomPaint(
-                  size: const Size(220, 16),
-                  painter: _WavyProgressPainter(),
+                  painter: _WavyProgressPainter(filledCount: filledCount),
                 ),
               ),
-              const SizedBox(height: 36),
-
-              // Botão Verificar
-              ElevatedButton(
-                onPressed: _verifyOtp,
-                child: const Text('Verificar código'),
+              const SizedBox(height: 34),
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _verifyOtp,
+                  child: Text(
+                    'Verificar código',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: MarsupiTheme.background,
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-
-              // Reenviar
-              const Center(
+              const SizedBox(height: 22),
+              Center(
                 child: Text(
                   'Reenviar código em 00:24',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: MarsupiColors.primary,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: MarsupiTheme.primaryGreen,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              const Center(
+              const SizedBox(height: 16),
+              Center(
                 child: Text(
                   'Não encontrou? Confira a caixa de spam.',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: MarsupiColors.textMuted,
+                    fontWeight: FontWeight.w400,
+                    color: MarsupiTheme.textPrimary,
                   ),
                 ),
               ),
-
-              const SizedBox(height: 60),
-              const Center(
+              const SizedBox(height: 120),
+              Align(
+                alignment: Alignment.centerLeft,
                 child: Text(
                   'Marsupi',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: MarsupiColors.textMuted,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w500,
+                    color: MarsupiTheme.primaryGreen,
                   ),
                 ),
               ),
@@ -269,31 +275,80 @@ class _OtpScreenState extends State<OtpScreen> {
 }
 
 class _WavyProgressPainter extends CustomPainter {
+  final int filledCount;
+  _WavyProgressPainter({required this.filledCount});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = MarsupiColors.mintBorder
+    final linePaint = Paint()
+      ..color = MarsupiTheme.mintBorder
       ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
     final path = Path();
-    path.moveTo(0, size.height * 0.5);
-    path.quadraticBezierTo(size.width * 0.25, size.height * 0.8, size.width * 0.5, size.height * 0.4);
-    path.quadraticBezierTo(size.width * 0.75, size.height * 0.1, size.width, size.height * 0.5);
-    canvas.drawPath(path, paint);
+    final x0 = 38.0;
+    final x1 = size.width * 0.36;
+    final x2 = size.width * 0.64;
+    final x3 = size.width - 38.0;
 
-    // Pontos verdes e ponto final âmbar
-    final dotPaint = Paint()..style = PaintingStyle.fill;
+    path.moveTo(x0, 10);
+    path.cubicTo(
+      (x0 + x1) / 2,
+      2,
+      (x0 + x1) / 2,
+      14,
+      x1,
+      8,
+    );
+    path.cubicTo(
+      (x1 + x2) / 2,
+      4,
+      (x1 + x2) / 2,
+      16,
+      x2,
+      11,
+    );
+    path.cubicTo(
+      (x2 + x3) / 2,
+      6,
+      (x2 + x3) / 2,
+      12,
+      x3,
+      9,
+    );
+    canvas.drawPath(path, linePaint);
 
-    dotPaint.color = MarsupiColors.primary;
-    canvas.drawCircle(Offset(10, size.height * 0.55), 4, dotPaint);
-    canvas.drawCircle(Offset(size.width * 0.45, size.height * 0.45), 4, dotPaint);
-    canvas.drawCircle(Offset(size.width * 0.72, size.height * 0.4), 4, dotPaint);
+    final points = [
+      Offset(x0, 10),
+      Offset(x1, 8),
+      Offset(x2, 11),
+      Offset(x3, 9),
+    ];
 
-    dotPaint.color = MarsupiColors.accentPeach;
-    canvas.drawCircle(Offset(size.width - 10, size.height * 0.5), 4.5, dotPaint);
+    for (var i = 0; i < 4; i++) {
+      if (i < 3) {
+        final fillPaint = Paint()
+          ..color = MarsupiTheme.primaryGreen
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(points[i], 4, fillPaint);
+      } else {
+        final bgPaint = Paint()
+          ..color = MarsupiTheme.background
+          ..style = PaintingStyle.fill;
+        final strokePaint = Paint()
+          ..color = filledCount >= 4
+              ? MarsupiTheme.primaryGreen
+              : MarsupiTheme.amberHighlight
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke;
+        canvas.drawCircle(points[i], 4, bgPaint);
+        canvas.drawCircle(points[i], 4, strokePaint);
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _WavyProgressPainter oldDelegate) =>
+      oldDelegate.filledCount != filledCount;
 }
