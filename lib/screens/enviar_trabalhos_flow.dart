@@ -18,33 +18,23 @@ class EnviarTrabalhosFlowScreen extends StatefulWidget {
 }
 
 class _EnviarTrabalhosFlowScreenState extends State<EnviarTrabalhosFlowScreen> {
-  // Simulação de fotos enviadas com nomes reconhecidos no cabeçalho
-  final List<Map<String, dynamic>> _trabalhosCapturados = [
-    {
-      'arquivo': 'trabalho_01.jpg',
-      'alunoReconhecido': 'Alice Santos',
-      'duvida': false,
-      'status': 'Nome nítido no cabeçalho',
-    },
-    {
-      'arquivo': 'trabalho_02.jpg',
-      'alunoReconhecido': 'Arthur Oliveira',
-      'duvida': false,
-      'status': 'Nome nítido no cabeçalho',
-    },
-    {
-      'arquivo': 'trabalho_03.jpg',
-      'alunoReconhecido': 'Davi Pereira',
-      'duvida': true,
-      'status': 'Caligrafia com traço leve - confirme o aluno',
-    },
-    {
-      'arquivo': 'trabalho_04.jpg',
-      'alunoReconhecido': 'Maria Eduarda Lima',
-      'duvida': false,
-      'status': 'Nome nítido no cabeçalho',
-    },
-  ];
+  List<Map<String, dynamic>> _trabalhosCapturados = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarTrabalhos();
+  }
+
+  Future<void> _carregarTrabalhos() async {
+    final list = await MockDataService.instance.getTrabalhosTemplate();
+    if (!mounted) return;
+    setState(() {
+      _trabalhosCapturados = list;
+      _isLoading = false;
+    });
+  }
 
   void _confirmarAluno(int index) {
     setState(() {
@@ -105,6 +95,17 @@ class _EnviarTrabalhosFlowScreenState extends State<EnviarTrabalhosFlowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Enviar trabalhos da aula'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: MarsupiColors.primary),
+        ),
+      );
+    }
+
     final temDuvida = _trabalhosCapturados.any((t) => t['duvida'] == true);
 
     return Scaffold(

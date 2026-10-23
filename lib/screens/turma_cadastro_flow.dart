@@ -14,11 +14,11 @@ class NovaTurmaFotoScreen extends StatefulWidget {
 
 class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController(text: '1º ano A');
-  final _anoController = TextEditingController(text: '2026');
+  final _nomeController = TextEditingController();
+  final _anoController = TextEditingController();
   String _turno = 'Manhã';
-  bool _fotoAdicionada = true;
-  String _nomeArquivo = 'chamada_1ano_a.jpg';
+  bool _fotoAdicionada = false;
+  String _nomeArquivo = '';
 
   @override
   void dispose() {
@@ -344,17 +344,23 @@ class ConfirmarNomesScreen extends StatefulWidget {
 }
 
 class _ConfirmarNomesScreenState extends State<ConfirmarNomesScreen> {
-  // Lista inicial de estudantes reconhecidos pela IA (como no Figma 277:361)
-  final List<Map<String, dynamic>> _alunosReconhecidos = [
-    {'nome': 'Alice Santos', 'precisaConferencia': false},
-    {'nome': 'Arthur Oliveira', 'precisaConferencia': false},
-    {'nome': 'Beatriz Costa', 'precisaConferencia': false},
-    {'nome': 'Davi Pereira', 'precisaConferencia': true},
-    {'nome': 'Helena Martins', 'precisaConferencia': false},
-    {'nome': 'Lucas Almeida', 'precisaConferencia': false},
-    {'nome': 'Maria Eduarda Lima', 'precisaConferencia': true},
-    {'nome': 'Miguel Souza', 'precisaConferencia': false},
-  ];
+  List<Map<String, dynamic>> _alunosReconhecidos = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarNomesOcr();
+  }
+
+  Future<void> _carregarNomesOcr() async {
+    final list = await MockDataService.instance.getChamadaOcrNomes();
+    if (!mounted) return;
+    setState(() {
+      _alunosReconhecidos = list;
+      _isLoading = false;
+    });
+  }
 
   void _editarNome(int index) {
     final controller = TextEditingController(text: _alunosReconhecidos[index]['nome'] as String);
@@ -470,6 +476,17 @@ class _ConfirmarNomesScreenState extends State<ConfirmarNomesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Confira os nomes'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: MarsupiColors.primary),
+        ),
+      );
+    }
+
     final total = _alunosReconhecidos.length;
     final pendentes = _alunosReconhecidos.where((a) => a['precisaConferencia'] == true).length;
 

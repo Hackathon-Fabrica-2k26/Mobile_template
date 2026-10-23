@@ -12,10 +12,19 @@ void main() {
       'nome': 'Alice Santos',
       'matricula': 'AL-2026-014',
       'nascimento': '14/03/2019 · 7 anos',
+      'status': 'Aluno ativo',
+      'acompanhamento': 'Participa das propostas em sala e demonstra interesse.',
       'radar_metrics': {
         'Foco sustentado': 45,
         'Raciocínio visual': 90,
       },
+      'atividades': [
+        {
+          'titulo': 'Explorando as vogais',
+          'data_envio': 'Enviada em 23/10/2026',
+          'observacao': 'Reconhece as vogais nas palavras trabalhadas.',
+        }
+      ],
     };
 
     await tester.pumpWidget(
@@ -68,9 +77,14 @@ void main() {
 
     expect(find.text('Enviar atividades'), findsOneWidget);
     expect(find.textContaining('Arraste e solte os arquivos'), findsOneWidget);
-    expect(find.text('Atividades-parte-01.pdf'), findsOneWidget);
     expect(find.text('Enviar'), findsOneWidget);
     expect(find.text('Cancelar'), findsOneWidget);
+
+    // Ao tocar no dropzone, adiciona o primeiro arquivo de exemplo
+    await tester.tap(find.textContaining('Arraste e solte os arquivos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atividades-parte-01.pdf'), findsOneWidget);
   });
 
   testWidgets('HomeScreen possui bottom navigation bar com 3 abas e barra de busca', (WidgetTester tester) async {

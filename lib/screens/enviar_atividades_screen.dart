@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/marsupi_theme.dart';
+import '../services/mock_data_service.dart';
 import 'enviar_trabalhos_flow.dart';
 
 class EnviarAtividadesScreen extends StatefulWidget {
@@ -17,20 +18,7 @@ class EnviarAtividadesScreen extends StatefulWidget {
 }
 
 class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
-  final List<Map<String, String>> _arquivos = [
-    {
-      'nome': 'Atividades-parte-01.pdf',
-      'tamanho': '8,4 MB · Concluído',
-    },
-    {
-      'nome': 'Atividades-parte-02.pdf',
-      'tamanho': '6,2 MB · Concluído',
-    },
-    {
-      'nome': 'Atividades-parte-03.jpg',
-      'tamanho': '3,1 MB · Concluído',
-    },
-  ];
+  final List<Map<String, String>> _arquivos = [];
 
   void _removerArquivo(int index) {
     setState(() {
@@ -38,12 +26,18 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
     });
   }
 
-  void _adicionarArquivo() {
+  void _adicionarArquivo() async {
+    final exemplos = await MockDataService.instance.getArquivosExemplo();
+    if (!mounted) return;
     setState(() {
-      _arquivos.add({
-        'nome': 'Atividades-parte-0${_arquivos.length + 1}.pdf',
-        'tamanho': '4,5 MB · Concluído',
-      });
+      if (_arquivos.length < exemplos.length) {
+        _arquivos.add(exemplos[_arquivos.length]);
+      } else {
+        _arquivos.add({
+          'nome': 'Atividades-parte-0${_arquivos.length + 1}.pdf',
+          'tamanho': '4,5 MB · Concluído',
+        });
+      }
     });
   }
 

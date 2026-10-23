@@ -59,7 +59,28 @@ class MockDataService {
     return ativs;
   }
 
-  /// Validação de login com usuário padrão caso não passe nada
+  /// Retorna os nomes identificados no OCR a partir do template do JSON
+  Future<List<Map<String, dynamic>>> getChamadaOcrNomes() async {
+    final data = await _loadData();
+    final list = data['chamada_ocr_template'] as List<dynamic>? ?? [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// Retorna os modelos de submissão de trabalhos a partir do JSON
+  Future<List<Map<String, dynamic>>> getTrabalhosTemplate() async {
+    final data = await _loadData();
+    final list = data['trabalhos_submissao_template'] as List<dynamic>? ?? [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// Retorna a lista de arquivos de exemplo para upload a partir do JSON
+  Future<List<Map<String, String>>> getArquivosExemplo() async {
+    final data = await _loadData();
+    final list = data['arquivos_exemplo'] as List<dynamic>? ?? [];
+    return list.map((e) => Map<String, String>.from(e as Map)).toList();
+  }
+
+  /// Validação de login
   Future<bool> authenticate(String matricula, String senha) async {
     await Future.delayed(const Duration(milliseconds: 350));
     return matricula.trim().isNotEmpty && senha.isNotEmpty;
@@ -107,7 +128,10 @@ class MockDataService {
         'turma_id': newTurmaId,
         'nome': nomeAluno.trim(),
         'avatar': initial,
+        'matricula': 'AL-2026-0$nextAlunoId',
+        'nascimento': '10/05/2019 · 7 anos',
         'status': 'Reconhecido via foto da chamada',
+        'precisa_conferencia': false,
         'perfil_disc': 'Em mapeamento inicial',
         'radar_metrics': {
           'Foco sustentado': 60,
@@ -124,6 +148,7 @@ class MockDataService {
         ],
         'dica_autonomia': 'Estimule a participação oral com apoio visual prévio.',
         'codigo_acesso': 'MARS-${(nextAlunoId * 37) % 9000 + 1000}',
+        'atividades': <Map<String, dynamic>>[],
       });
       nextAlunoId++;
     }
@@ -131,6 +156,69 @@ class MockDataService {
     _cachedData!['turmas'] = turmas;
     _cachedData!['alunos'] = alunos;
     return novaTurma;
+  }
+
+  /// Cadastra um aluno avulso na turma indicada
+  Future<Map<String, dynamic>> cadastrarAluno({
+    required int turmaId,
+    required String nome,
+    String? nascimento,
+    String? matricula,
+  }) async {
+    final data = await _loadData();
+    final alunos = (data['alunos'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final turmas = (data['turmas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+
+    final nextId = alunos.isEmpty
+        ? 101
+        : (alunos.map((a) => (a['id'] as num).toInt()).reduce((a, b) => a > b ? a : b) + 1);
+
+    final cleanNome = nome.trim();
+    final initial = cleanNome.isNotEmpty ? cleanNome[0].toUpperCase() : 'A';
+    final cleanMatricula = matricula?.trim().isNotEmpty == true ? matricula!.trim() : 'AL-2026-0$nextId';
+    final cleanNascimento = nascimento?.trim().isNotEmpty == true ? nascimento!.trim() : '10/05/2019 · 7 anos';
+
+    final novoAluno = {
+      'id': nextId,
+      'turma_id': turmaId,
+      'nome': cleanNome,
+      'avatar': initial,
+      'matricula': cleanMatricula,
+      'nascimento': cleanNascimento,
+      'status': 'Aluno ativo',
+      'precisa_conferencia': false,
+      'acompanhamento': 'Cadastrado recentemente. Acompanhando adaptação inicial.',
+      'perfil_disc': 'Em observação',
+      'radar_metrics': {
+        'Foco sustentado': 60,
+        'Raciocínio visual': 70,
+        'Interação social': 70,
+        'Regulação sensorial': 60,
+        'Coordenação fina': 65,
+      },
+      'strengths': [
+        'Boa receptividade às rotinas de sala',
+      ],
+      'support_needs': [
+        'Avaliação diagnóstica inicial em andamento',
+      ],
+      'dica_autonomia': 'Acompanhe a interação inicial em pequenos grupos.',
+      'codigo_acesso': 'MARS-${(nextId * 37) % 9000 + 1000}',
+      'atividades': <Map<String, dynamic>>[],
+    };
+
+    alunos.add(novoAluno);
+
+    for (var t in turmas) {
+      if (t['id'] == turmaId) {
+        t['estudantes_count'] = ((t['estudantes_count'] as int? ?? 0) + 1);
+        break;
+      }
+    }
+
+    _cachedData!['alunos'] = alunos;
+    _cachedData!['turmas'] = turmas;
+    return novoAluno;
   }
 
   /// Adiciona uma atividade com sua versão geral e versões adaptadas geradas por IA

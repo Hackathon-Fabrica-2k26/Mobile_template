@@ -31,14 +31,6 @@ class _CriarAtividadeFlowScreenState extends State<CriarAtividadeFlowScreen> {
   bool _analisouAlunos = false;
 
   @override
-  void initState() {
-    super.initState();
-    _tituloController.text = 'Explorando as vogais na natureza';
-    _enunciadoController.text =
-        'Observe as gravuras das árvores e animais. Circule a primeira letra de cada palavra e ligue o som correspondente à sua imagem.';
-  }
-
-  @override
   void dispose() {
     _tituloController.dispose();
     _enunciadoController.dispose();

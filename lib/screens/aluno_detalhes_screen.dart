@@ -23,9 +23,12 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final nome = widget.aluno['nome'] as String? ?? 'Alice Santos';
-    final matricula = widget.aluno['matricula'] as String? ?? 'AL-2026-014';
-    final nascimento = widget.aluno['nascimento'] as String? ?? '14/03/2019 · 7 anos';
+    final nome = widget.aluno['nome'] as String? ?? 'Estudante';
+    final matricula = widget.aluno['matricula'] as String? ?? '-';
+    final nascimento = widget.aluno['nascimento'] as String? ?? '-';
+    final status = widget.aluno['status'] as String? ?? 'Aluno ativo';
+    final acompanhamento = widget.aluno['acompanhamento'] as String? ?? 'Sem observações registradas ainda.';
+    final atividades = (widget.aluno['atividades'] as List<dynamic>? ?? []);
     final radar = widget.aluno['radar_metrics'] as Map<String, dynamic>?;
 
     return Scaffold(
@@ -132,9 +135,9 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                             color: MarsupiColors.mintContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
-                            'Aluno ativo',
-                            style: TextStyle(
+                          child: Text(
+                            status,
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: MarsupiColors.primary,
@@ -266,9 +269,9 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Participa das propostas em sala e demonstra interesse pela leitura, escrita e atividades de contagem.',
-                  style: TextStyle(
+                Text(
+                  acompanhamento,
+                  style: const TextStyle(
                     fontSize: 13,
                     color: MarsupiColors.darkForest,
                     height: 1.5,
@@ -331,10 +334,10 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                   const SizedBox(height: 24),
                 ],
 
-                // Seção Atividades (2) (Figma: Cards de atividades enviadas com "Exportar relatório")
-                const Text(
-                  'Atividades (2)',
-                  style: TextStyle(
+                // Seção Atividades (Figma)
+                Text(
+                  'Atividades (${atividades.length})',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: MarsupiColors.darkForest,
@@ -342,39 +345,57 @@ class _AlunoDetalhesScreenState extends State<AlunoDetalhesScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                _buildAtividadeCard(
-                  titulo: 'Explorando as vogais',
-                  dataEnvio: 'Enviada em 23/10/2026',
-                  observacao: 'Reconhece as vogais nas palavras trabalhadas.',
-                ),
-                const SizedBox(height: 12),
-
-                _buildAtividadeCard(
-                  titulo: 'Contando até 10',
-                  dataEnvio: 'Enviada em 21/10/2026',
-                  observacao: 'Associa os números às quantidades apresentadas.',
-                ),
+                if (atividades.isEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: MarsupiColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: MarsupiColors.mintBorder),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Nenhuma atividade registrada para este estudante.',
+                        style: TextStyle(fontSize: 13, color: MarsupiColors.textMuted),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  ...atividades.map((item) {
+                    final ativ = Map<String, dynamic>.from(item as Map);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: _buildAtividadeCard(
+                        titulo: ativ['titulo'] as String? ?? 'Atividade',
+                        dataEnvio: ativ['data_envio'] as String? ?? '',
+                        observacao: ativ['observacao'] as String? ?? '',
+                      ),
+                    );
+                  }),
+                ],
                 const SizedBox(height: 24),
 
                 // Rodapé de Exportação e Ações
-                const Center(
-                  child: Text(
-                    'Exporte os relatórios das duas atividades.',
-                    style: TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
+                if (atividades.isNotEmpty) ...[
+                  Center(
+                    child: Text(
+                      'Exporte os relatórios das ${atividades.length} atividades.',
+                      style: const TextStyle(fontSize: 12, color: MarsupiColors.textMuted),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('📥 Exportando relatórios consolidados em PDF...'),
-                        backgroundColor: MarsupiColors.primary,
-                      ),
-                    );
-                  },
-                  child: const Text('Exportar todas as atividades'),
-                ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('📥 Exportando relatórios consolidados em PDF...'),
+                          backgroundColor: MarsupiColors.primary,
+                        ),
+                      );
+                    },
+                    child: const Text('Exportar todas as atividades'),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
                   onPressed: () {

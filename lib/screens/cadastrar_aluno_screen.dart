@@ -24,12 +24,27 @@ class _CadastrarAlunoScreenState extends State<CadastrarAlunoScreen> {
   final _nomeController = TextEditingController();
   final _nascimentoController = TextEditingController();
   final _matriculaController = TextEditingController();
-  late String _turmaSelecionada;
+  int? _turmaIdSelecionada;
+  List<Map<String, dynamic>> _turmas = [];
+  bool _carregandoTurmas = true;
 
   @override
   void initState() {
     super.initState();
-    _turmaSelecionada = '${widget.turmaNome} · ${widget.turno}';
+    _turmaIdSelecionada = widget.turmaId;
+    _carregarTurmas();
+  }
+
+  Future<void> _carregarTurmas() async {
+    final turmas = await MockDataService.instance.getTurmas();
+    if (!mounted) return;
+    setState(() {
+      _turmas = turmas;
+      _carregandoTurmas = false;
+      if (_turmas.isNotEmpty && !_turmas.any((t) => t['id'] == _turmaIdSelecionada)) {
+        _turmaIdSelecionada = _turmas.first['id'] as int;
+      }
+    });
   }
 
   @override
@@ -44,19 +59,19 @@ class _CadastrarAlunoScreenState extends State<CadastrarAlunoScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final nome = _nomeController.text.trim();
+    final matricula = _matriculaController.text.trim();
+    final nascimento = _nascimentoController.text.trim();
+    final turmaId = _turmaIdSelecionada ?? widget.turmaId;
 
     await showMarsupiLoading(
       context,
       message: 'Cadastrando aluno na turma...',
-      task: () async {
-        await Future.delayed(const Duration(milliseconds: 400));
-        await MockDataService.instance.addTurmaComAlunos(
-          nome: widget.turmaNome,
-          turno: widget.turno,
-          anoLetivo: 2026,
-          nomesAlunos: [nome],
-        );
-      },
+      task: () => MockDataService.instance.cadastrarAluno(
+        turmaId: turmaId,
+        nome: nome,
+        nascimento: nascimento.isNotEmpty ? nascimento : null,
+        matricula: matricula.isNotEmpty ? matricula : null,
+      ),
     );
 
     if (!mounted) return;
@@ -186,19 +201,27 @@ class _CadastrarAlunoScreenState extends State<CadastrarAlunoScreen> {
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
                 ),
                 const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: _turmaSelecionada,
-                  decoration: const InputDecoration(),
-                  items: [
-                    DropdownMenuItem(
-                      value: _turmaSelecionada,
-                      child: Text(_turmaSelecionada),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) setState(() => _turmaSelecionada = val);
-                  },
-                ),
+                _carregandoTurmas
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: LinearProgressIndicator(color: MarsupiColors.primary),
+                      )
+                    : DropdownButtonFormField<int>(
+                        initialValue: _turmaIdSelecionada,
+                        decoration: const InputDecoration(),
+                        items: _turmas.map((t) {
+                          final tid = t['id'] as int;
+                          final tnome = t['nome'] as String;
+                          final tturno = t['turno'] as String? ?? 'Manhã';
+                          return DropdownMenuItem<int>(
+                            value: tid,
+                            child: Text('$tnome · $tturno'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _turmaIdSelecionada = val);
+                        },
+                      ),
                 const SizedBox(height: 6),
                 const Text(
                   'O aluno será adicionado à lista desta turma.',

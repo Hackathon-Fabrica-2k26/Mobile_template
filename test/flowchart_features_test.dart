@@ -26,6 +26,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('ETAPA 2 DE 3'), findsOneWidget);
     expect(find.textContaining('nomes encontrados'), findsOneWidget);
@@ -58,6 +59,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('Revisar identificação das fotos'), findsOneWidget);
     expect(find.text('Alice Santos'), findsOneWidget);
