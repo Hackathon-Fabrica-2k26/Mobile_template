@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/item_model.dart';
-import '../services/api_service.dart';
+import '../constants/marsupi_theme.dart';
 import 'create_screen.dart';
+import 'turma_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,319 +11,227 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Item>> _itemsFuture;
+  final List<Map<String, dynamic>> _turmas = [
+    {
+      'nome': '1º ano A',
+      'turno': 'Manhã',
+      'estudantes': 25,
+      'icon': Icons.edit_outlined,
+      'color': const Color(0xFFEBF2EC),
+    },
+    {
+      'nome': '2º ano B',
+      'turno': 'Tarde',
+      'estudantes': 28,
+      'icon': Icons.menu_book_outlined,
+      'color': const Color(0xFFF7F2E7),
+    },
+    {
+      'nome': '3º ano A',
+      'turno': 'Manhã',
+      'estudantes': 26,
+      'icon': Icons.chair_alt_outlined,
+      'color': const Color(0xFFDCE9E0),
+    },
+  ];
 
   @override
-  void initState() {
-    super.initState();
-    _refreshItems();
-  }
-
-  void _refreshItems() {
-    setState(() {
-      _itemsFuture = ApiService.instance.getItems();
-    });
-  }
-
-  Future<void> _toggleDone(Item item) async {
-    final updated = item.copyWith(done: !item.done);
-    try {
-      await ApiService.instance.updateItem(updated);
-      _refreshItems();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  Future<void> _confirmDelete(Item item) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Excluir item?'),
-        content: Text('Deseja realmente excluir "${item.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true && item.id != null) {
-      try {
-        await ApiService.instance.deleteItem(item.id!);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item excluído com sucesso!')),
-        );
-        _refreshItems();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  void _openDevSettingsDialog() {
-    final controller = TextEditingController(text: ApiService.baseUrl);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Configuração de Conexão'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: MarsupiColors.background,
+      appBar: AppBar(
+        title: Row(
           children: [
-            const Text(
-              'Endereço do servidor:',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Servidor',
-                border: OutlineInputBorder(),
-              ),
+            Image.asset(
+              'assets/images/logo_marsupi.png',
+              height: 32,
+              fit: BoxFit.contain,
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              ApiService.customBaseUrl = null;
-              Navigator.of(ctx).pop();
-              _refreshItems();
-            },
-            child: const Text('Padrão'),
-          ),
-          FilledButton(
-            onPressed: () {
-              ApiService.customBaseUrl = controller.text.trim();
-              Navigator.of(ctx).pop();
-              _refreshItems();
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: GestureDetector(
-          // Em modo debug, um toque longo permite ajustar o servidor caso necessário
-          onLongPress: kDebugMode ? _openDevSettingsDialog : null,
-          child: const Text('Marsupi'),
-        ),
-        actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: _refreshItems,
+            icon: const Icon(Icons.search, color: MarsupiColors.darkForest),
+            onPressed: () {},
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: MarsupiColors.sage,
+              child: const Text(
+                'AP',
+                style: TextStyle(
+                  color: MarsupiColors.darkForest,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => _refreshItems(),
-        child: FutureBuilder<List<Item>>(
-          future: _itemsFuture,
-          builder: (context, snapshot) {
-            // 1. Estado de Carregamento (Loading)
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Carregando itens...'),
-                  ],
-                ),
-              );
-            }
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Saudação
+            const Text(
+              'Bem-vinda, Ana!',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: MarsupiColors.darkForest,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Seu copiloto pedagógico para ensino inclusivo.',
+              style: TextStyle(fontSize: 13, color: MarsupiColors.textMuted),
+            ),
+            const SizedBox(height: 24),
 
-            // 2. Estado de Erro Amigável
-            if (snapshot.hasError) {
-              return Center(
+            // Cabeçalho da seção Minhas turmas
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Minhas turmas',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: MarsupiColors.darkForest,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Nova turma', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: MarsupiColors.darkForest,
+                    side: const BorderSide(color: MarsupiColors.mintBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Cards de Turmas (Figma Design)
+            ..._turmas.map((turma) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 0,
+                color: MarsupiColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: MarsupiColors.mintBorder),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.wifi_off_rounded,
-                        size: 72,
-                        color: theme.colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Não foi possível carregar os dados',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        snapshot.error?.toString() ??
-                            'Verifique sua conexão com a internet e tente novamente.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: _refreshItems,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Tentar novamente'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            // 3. Estado Vazio Amigável
-            final items = snapshot.data ?? [];
-            if (items.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.inbox_outlined,
-                        size: 72,
-                        color: theme.colorScheme.outline,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nenhum item encontrado',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Toque no botão "Novo Item" abaixo para adicionar seu primeiro registro.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            // 4. Estado com Itens (Sucesso)
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Card(
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: item.done
-                          ? theme.colorScheme.primary.withValues(alpha: 0.3)
-                          : theme.colorScheme.outlineVariant,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    leading: Checkbox(
-                      value: item.done,
-                      onChanged: (_) => _toggleDone(item),
-                    ),
-                    title: Text(
-                      item.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        decoration:
-                            item.done ? TextDecoration.lineThrough : null,
-                        color: item.done
-                            ? theme.colorScheme.outline
-                            : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    subtitle: item.description.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              item.description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                decoration: item.done
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            turma['nome'] as String,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: MarsupiColors.darkForest,
                             ),
-                          )
-                        : null,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      color: theme.colorScheme.error,
-                      tooltip: 'Excluir',
-                      onPressed: () => _confirmDelete(item),
-                    ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: turma['color'] as Color,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              turma['icon'] as IconData,
+                              color: MarsupiColors.darkForest,
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1, color: MarsupiColors.mintBorder),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Turno', style: TextStyle(fontSize: 11, color: MarsupiColors.textMuted)),
+                              const SizedBox(height: 2),
+                              Text(
+                                turma['turno'] as String,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 32),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Estudantes', style: TextStyle(fontSize: 11, color: MarsupiColors.textMuted)),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${turma['estudantes']}',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MarsupiColors.darkForest),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => TurmaDetailScreen(
+                                    turmaNome: turma['nome'] as String,
+                                    turno: turma['turno'] as String,
+                                    totalAlunos: turma['estudantes'] as int,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: MarsupiColors.mintContainer,
+                              foregroundColor: MarsupiColors.darkForest,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            ),
+                            child: const Text('Acessar turma →', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                );
-              },
-            );
-          },
+                ),
+              );
+            }),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (context) => const CreateItemScreen(),
-            ),
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CreateItemScreen()),
           );
-
-          if (created == true) {
-            _refreshItems();
-          }
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Item'),
+        backgroundColor: MarsupiColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.psychology_outlined),
+        label: const Text('Nova Observação'),
       ),
     );
   }
