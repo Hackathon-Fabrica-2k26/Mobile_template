@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
@@ -26,6 +27,8 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
   List<String> _nomesTurmas = [];
   List<Map<String, dynamic>> _turmas = [];
   final List<Map<String, String>> _arquivos = [];
+  String? _textoOriginalExtraido;
+  String? _origemExtraida;
 
   @override
   void initState() {
@@ -67,22 +70,131 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
     super.dispose();
   }
 
+  String _formatarTamanho(int bytes) {
+    if (bytes <= 0) return '';
+    if (bytes < 1024) return '$bytes B';
+    final kb = bytes / 1024;
+    if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
+    final mb = kb / 1024;
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+
+  int _turmaIdAtual() {
+    return (_turmas.firstWhere(
+          (t) => t['nome'] == _turmaSelecionada,
+          orElse: () => {'id': widget.turmaId},
+        )['id'] as int?) ??
+        widget.turmaId;
+  }
+
   void _removerArquivo(int index) {
     setState(() {
       _arquivos.removeAt(index);
+      if (_arquivos.isEmpty) {
+        _textoOriginalExtraido = null;
+        _origemExtraida = null;
+      }
     });
   }
 
-  void _adicionarArquivo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'O envio de arquivos ainda não está disponível no servidor. '
-          'Descreva a atividade no campo de observações.',
+  Future<void> _adicionarArquivo() async {
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'docx'],
+        withData: true,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível abrir o seletor de arquivos.'),
+          backgroundColor: Colors.redAccent,
         ),
-        backgroundColor: MarsupiTheme.primaryGreen,
-      ),
+      );
+      return;
+    }
+
+    if (result == null || result.files.isEmpty || !mounted) return;
+    final picked = result.files.first;
+    if (picked.size > 20 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O arquivo excede o limite de 20 MB.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    List<int> bytes;
+    try {
+      bytes = picked.bytes ?? await picked.xFile.readAsBytes();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível ler o arquivo selecionado.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    final turmaId = _turmaIdAtual();
+    String? erro;
+    final extraido = await showMarsupiLoading<Map<String, dynamic>?>(
+      context,
+      message: 'Extraindo atividade...',
+      task: () async {
+        try {
+          return await ApiService.instance.extrairAtividade(
+            bytes: bytes,
+            filename: picked.name,
+            turmaId: turmaId,
+          );
+        } on ApiException catch (e) {
+          erro = e.message;
+          return null;
+        }
+      },
     );
+
+    if (!mounted) return;
+    if (erro != null || extraido == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(erro ?? 'Falha ao extrair os dados do arquivo.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final tituloSugerido = (extraido['titulo'] as String? ?? '').trim();
+    final descricaoSugerida = (extraido['descricao'] as String? ?? '').trim();
+    final textoOriginal = (extraido['texto_original'] as String? ?? '').trim();
+    final origem = (extraido['origem'] as String? ?? 'pdf').trim();
+
+    setState(() {
+      if (tituloSugerido.isNotEmpty) {
+        _tituloController.text = tituloSugerido;
+      }
+      if (descricaoSugerida.isNotEmpty) {
+        _obsController.text = descricaoSugerida;
+      }
+      _textoOriginalExtraido =
+          textoOriginal.isNotEmpty ? textoOriginal : descricaoSugerida;
+      _origemExtraida = origem.isNotEmpty ? origem : 'pdf';
+      _arquivos
+        ..clear()
+        ..add({
+          'nome': picked.name,
+          'tamanho': _formatarTamanho(picked.size),
+        });
+    });
   }
 
   Future<void> _enviar() async {
@@ -96,21 +208,28 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
       return;
     }
 
-    if (_obsController.text.trim().isEmpty) {
+    final objetivoTexto = _obsController.text.trim();
+    final textoOriginalFinal =
+        (_textoOriginalExtraido != null && _textoOriginalExtraido!.trim().isNotEmpty)
+            ? _textoOriginalExtraido!.trim()
+            : objetivoTexto;
+
+    if (objetivoTexto.isEmpty && textoOriginalFinal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Descreva a atividade no campo de observações.'),
+          content: Text(
+            'Escolha um arquivo PDF/DOCX ou descreva a atividade no campo de observações.',
+          ),
           backgroundColor: MarsupiTheme.primaryGreen,
         ),
       );
       return;
     }
 
-    final turmaId = (_turmas.firstWhere(
-          (t) => t['nome'] == _turmaSelecionada,
-          orElse: () => {'id': widget.turmaId},
-        )['id'] as int?) ??
-        widget.turmaId;
+    final turmaId = _turmaIdAtual();
+    final origemFinal = (_origemExtraida != null && _origemExtraida!.isNotEmpty)
+        ? _origemExtraida!
+        : 'texto';
 
     String? erro;
     await showMarsupiLoading<void>(
@@ -121,7 +240,9 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
           await ApiService.instance.addAtividade(
             turmaId: turmaId,
             titulo: _tituloController.text.trim(),
-            texto: _obsController.text.trim(),
+            objetivo: objetivoTexto,
+            textoOriginal: textoOriginalFinal,
+            origem: origemFinal,
           );
         } on ApiException catch (e) {
           erro = e.message;

@@ -605,25 +605,79 @@ class ApiService {
     }
   }
 
+  /// Extrai texto, sugestão de título e descrição de um arquivo PDF/DOCX (POST /api/atividades/extrair/).
+  Future<Map<String, dynamic>> extrairAtividade({
+    required List<int> bytes,
+    required String filename,
+    int? turmaId,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/atividades/extrair/'),
+    )
+      ..headers.addAll(_headers(json: false))
+      ..files.add(
+        http.MultipartFile.fromBytes('arquivo', bytes, filename: filename),
+      );
+    if (turmaId != null) {
+      request.fields['turma'] = turmaId.toString();
+    }
+
+    http.Response res;
+    try {
+      res = await http.Response.fromStream(
+        await request.send().timeout(const Duration(seconds: 60)),
+      );
+    } catch (_) {
+      throw const ApiException(_msgOffline);
+    }
+    final body = _decode(res);
+    if (res.statusCode == 200 && body is Map) {
+      final lower = filename.toLowerCase();
+      final origemDefault = lower.endsWith('.docx') ? 'docx' : 'pdf';
+      return {
+        'titulo': (body['titulo'] ?? '').toString(),
+        'descricao': (body['descricao'] ?? '').toString(),
+        'texto_original': (body['texto_original'] ?? '').toString(),
+        'origem': (body['origem'] ?? origemDefault).toString(),
+      };
+    }
+    throw ApiException(
+      _errorMessage(body, 'Não foi possível extrair os dados do arquivo.'),
+      statusCode: res.statusCode,
+    );
+  }
+
   Future<Map<String, dynamic>> addAtividade({
     required int turmaId,
     required String titulo,
-    required String texto,
     String? objetivo,
+    String? textoOriginal,
+    String? texto,
+    String origem = 'texto',
   }) async {
+    final objetivoLimpo = (objetivo ?? '').trim();
+    final textoLimpo = (textoOriginal ?? texto ?? objetivoLimpo).trim();
+    final origemLimpa = origem.trim().isNotEmpty ? origem.trim() : 'texto';
     final a = await _write(
       'POST',
       '/api/atividades/',
       {
         'turma': turmaId,
         'titulo': titulo.trim(),
-        'texto_original': texto.trim(),
-        'origem': 'texto',
-        if (objetivo != null && objetivo.trim().isNotEmpty)
-          'objetivo': objetivo.trim(),
+        'objetivo': objetivoLimpo,
+        'texto_original': textoLimpo.isNotEmpty ? textoLimpo : titulo.trim(),
+        'origem': origemLimpa,
       },
       okCodes: {201},
     );
-    return {'id': a['id'], 'nome': a['titulo'] ?? titulo};
+    return {
+      'id': a['id'],
+      'nome': a['titulo'] ?? titulo,
+      'titulo': a['titulo'] ?? titulo,
+      'objetivo': a['objetivo'] ?? objetivoLimpo,
+      'texto_original': a['texto_original'] ?? textoLimpo,
+      'origem': a['origem'] ?? origemLimpa,
+    };
   }
 }
