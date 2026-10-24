@@ -17,12 +17,12 @@ class ApiService {
   ApiService._internal();
   static final ApiService instance = ApiService._internal();
 
-  /// Pode ser configurada via --dart-define=API_URL=http://...
-  /// No emulador Android, 10.0.2.2 mapeia para o host localhost.
-  String baseUrl = const String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://127.0.0.1:8000',
-  );
+  /// Padrão: API de produção. Para desenvolvimento local use
+  /// --dart-define=API_URL=http://10.0.2.2:8000 (emulador Android) ou o IP da máquina.
+  static const String _apiUrlProducao = 'https://api.delta.fabricadesoftware.ifc.edu.br';
+  static const String _apiUrlDefinida = String.fromEnvironment('API_URL');
+  String baseUrl = (_apiUrlDefinida.isEmpty ? _apiUrlProducao : _apiUrlDefinida)
+      .replaceAll(RegExp(r'/+$'), '');
 
   static const Duration _timeout = Duration(seconds: 8);
   static const String _msgOffline =
