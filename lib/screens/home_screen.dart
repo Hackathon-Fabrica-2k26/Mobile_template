@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/api_service.dart';
-import 'login_screen.dart';
+import 'perfil_screen.dart';
 import 'turma_cadastro_flow.dart';
 import 'turma_detail_screen.dart';
 
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         _buildInicioView(firstName),
                         _buildInicioView(firstName),
-                        _buildPerfilView(fullUserName, userAvatar),
+                        const PerfilScreen(),
                       ],
                     ),
                   ),
@@ -394,109 +394,6 @@ class _HomeScreenState extends State<HomeScreen> {
           }),
         ],
       ),
-    );
-  }
-
-  Widget _buildPerfilView(String userName, String userAvatar) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 72,
-              height: 72,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0xFFDDECE1),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                userAvatar,
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: MarsupiTheme.textPrimary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              userName,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: MarsupiTheme.textPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDCE6DF)),
-            ),
-            child: Column(
-              children: [
-                _buildPerfilItem(
-                  'Matrícula',
-                  (_user['matricula'] as String?) ?? '',
-                ),
-                const Divider(height: 20, color: Color(0xFFE8EEE8)),
-                _buildPerfilItem(
-                  'E-mail',
-                  (_user['email'] as String?) ?? '',
-                ),
-                const Divider(height: 20, color: Color(0xFFE8EEE8)),
-                _buildPerfilItem(
-                  'Escola',
-                  (_user['escola'] as String?) ?? '',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: () {
-              ApiService.instance.logout();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
-            },
-            child: const Text('Sair'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerfilItem(String titulo, String valor) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          titulo,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: const Color(0xFF70877B),
-          ),
-        ),
-        Text(
-          valor,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: MarsupiTheme.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }

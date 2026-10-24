@@ -212,6 +212,63 @@ class ApiService {
     return await MockDataService.instance.getUser();
   }
 
+  /// Atualiza os dados do perfil do professor via PATCH /api/auth/me/
+  Future<Map<String, dynamic>> updateProfile({
+    required String name,
+    required String email,
+  }) async {
+    final cleanName = name.trim();
+    final cleanEmail = email.trim();
+
+    if (_accessToken != null) {
+      try {
+        final res = await http
+            .patch(
+              Uri.parse('$baseUrl/api/auth/me/'),
+              headers: _headers(),
+              body: jsonEncode({
+                'name': cleanName,
+                'email': cleanEmail,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+          final nome = data['name'] as String? ?? cleanName;
+          final initials = nome.trim().isNotEmpty
+              ? nome.trim().split(' ').where((p) => p.isNotEmpty).map((p) => p[0]).take(2).join().toUpperCase()
+              : 'PD';
+
+          _currentUser = {
+            'id': data['id'] ?? (_currentUser?['id'] ?? 1),
+            'nome': nome,
+            'matricula': data['matricula'] ?? (_currentUser?['matricula'] ?? 'DEMO0001'),
+            'email': data['email'] ?? cleanEmail,
+            'escola': _currentUser?['escola'] ?? 'Escola Marsupi Demo',
+            'avatar': initials,
+          };
+          await MockDataService.instance.updateUser(nome, cleanEmail);
+          return {'success': true, 'user': _currentUser};
+        }
+      } catch (_) {}
+    }
+
+    final updated = await MockDataService.instance.updateUser(cleanName, cleanEmail);
+    _currentUser = updated;
+    return {'success': true, 'user': _currentUser};
+  }
+
+  /// Retorna os 3 indicadores de resumo do perfil (turmas, estudantes, atividades)
+  Future<Map<String, dynamic>> getResumoPerfil() async {
+    return await MockDataService.instance.getResumoPerfil();
+  }
+
+  /// Retorna as atividades recentes para a aba do perfil
+  Future<List<Map<String, dynamic>>> getAtividadesRecentes() async {
+    return await MockDataService.instance.getAtividadesRecentes();
+  }
+
   /// Listagem de turmas (/api/turmas/)
   Future<List<Map<String, dynamic>>> getTurmas() async {
     if (_accessToken != null) {

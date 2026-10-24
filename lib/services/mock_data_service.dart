@@ -19,6 +19,67 @@ class MockDataService {
     return (data['user'] as Map<String, dynamic>?) ?? {};
   }
 
+  Future<Map<String, dynamic>> updateUser(String name, String email) async {
+    final data = await _loadData();
+    final user = Map<String, dynamic>.from(data['user'] as Map? ?? {});
+    final cleanName = name.trim();
+    user['nome'] = cleanName;
+    user['email'] = email.trim();
+    final initials = cleanName.isNotEmpty
+        ? cleanName.split(' ').where((p) => p.isNotEmpty).map((p) => p[0]).take(2).join().toUpperCase()
+        : 'PD';
+    user['avatar'] = initials;
+    _cachedData!['user'] = user;
+    return user;
+  }
+
+  Future<Map<String, dynamic>> getResumoPerfil() async {
+    final turmas = await getTurmas();
+    final alunos = await getAlunos();
+    final ativs = await getAtividades();
+    return {
+      'turmas_count': turmas.length,
+      'estudantes_count': alunos.length,
+      'atividades_count': ativs.length,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> getAtividadesRecentes() async {
+    final ativs = await getAtividades();
+    if (ativs.isNotEmpty) {
+      return ativs.asMap().entries.map((entry) {
+        final i = entry.key;
+        final a = entry.value;
+        return {
+          'id': a['id'] ?? (i + 1),
+          'titulo': a['nome'] ?? a['titulo'] ?? 'Atividade',
+          'data': a['data'] ?? '23/10/2026',
+          'status': i % 2 == 0 ? 'Concluída' : 'Em andamento',
+        };
+      }).toList();
+    }
+    return [
+      {
+        'id': 1,
+        'titulo': 'Missão Espacial: Caligrafia nas Estrelas',
+        'data': '23/10/2026',
+        'status': 'Concluída',
+      },
+      {
+        'id': 2,
+        'titulo': 'Camarada da Turma: Desafio Relâmpago',
+        'data': '22/10/2026',
+        'status': 'Concluída',
+      },
+      {
+        'id': 3,
+        'titulo': 'Coordenação Motora e Traçados',
+        'data': '20/10/2026',
+        'status': 'Em andamento',
+      },
+    ];
+  }
+
   Future<List<Map<String, dynamic>>> getTurmas() async {
     final data = await _loadData();
     final list = data['turmas'] as List<dynamic>? ?? [];
