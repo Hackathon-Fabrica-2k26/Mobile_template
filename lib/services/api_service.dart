@@ -294,6 +294,8 @@ class ApiService {
             body: jsonEncode({'otp_token': _lastOtpToken}),
           )
           .timeout(_timeout);
+      // O backend responde 204 (sem corpo); 200 com novo otp_token também é aceito.
+      if (res.statusCode == 204) return true;
       if (res.statusCode == 200) {
         final body = _decode(res);
         if (body is Map) {
