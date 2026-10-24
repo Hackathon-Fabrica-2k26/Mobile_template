@@ -54,7 +54,7 @@ void main() {
     expect(find.text('← Voltar ao login'), findsOneWidget);
   });
 
-  testWidgets('EnviarAtividadesScreen renderiza dropzone, campos vazios e lista de arquivos do JSON', (WidgetTester tester) async {
+  testWidgets('EnviarAtividadesScreen renderiza dropzone, campos vazios e nenhum arquivo simulado', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: EnviarAtividadesScreen(
@@ -70,7 +70,7 @@ void main() {
     expect(find.text('Título da atividade'), findsOneWidget);
     expect(find.text('Enviar'), findsOneWidget);
     expect(find.text('Cancelar'), findsOneWidget);
-    expect(find.text('Atividades-parte-01.pdf'), findsOneWidget);
+    expect(find.text('Arquivos (0)'), findsOneWidget);
   });
 
   testWidgets('HomeScreen possui bottom navigation bar com 3 abas e barra de busca', (WidgetTester tester) async {

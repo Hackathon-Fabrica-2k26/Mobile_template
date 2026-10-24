@@ -3,40 +3,24 @@ import 'package:mobile_template/services/api_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('ApiService possui suporte a fallback gracioso caso backend esteja offline', () async {
+
+  test('sem backend acessível o login falha e as listagens lançam ApiException (sem dados simulados)', () async {
     final api = ApiService.instance;
-    // Com url inexistente, fallback funciona sem quebrar a app
-    api.setBaseUrl('http://127.0.0.1:9999');
+    final original = api.baseUrl;
+    api.setBaseUrl('http://127.0.0.1:9');
 
-    final loginRes = await api.login('PROF2026', 'user123');
-    expect(loginRes['success'], isTrue);
-    expect(loginRes['is_remote'], isFalse);
+    final res = await api.login('PROF2026', 'user123');
+    expect(res['success'], isFalse);
+    expect(res['error'], isNotNull);
 
-    final loginInvalido = await api.login('PROF2026', 'senha_errada');
-    expect(loginInvalido['success'], isFalse);
-    expect(loginInvalido['error'], isNotNull);
+    expect(() => api.getTurmas(), throwsA(isA<ApiException>()));
 
-    final turmas = await api.getTurmas();
-    expect(turmas.isNotEmpty, isTrue);
-
-    final alunos = await api.getAlunos(turmaId: 1);
-    expect(alunos.isNotEmpty, isTrue);
-    expect(alunos.first['nome'], isNotEmpty);
-
-    // Restaura padrão
-    api.setBaseUrl('http://127.0.0.1:8000');
+    api.setBaseUrl(original);
   });
 
-  test('ApiService conecta e autentica no backend Django local quando ativo', () async {
-    final api = ApiService.instance;
-    api.setBaseUrl('http://127.0.0.1:8000');
-
-    final isAlive = await api.checkBackendHealth();
-    if (isAlive) {
-      final loginRes = await api.login('DEMO0001', 'user123');
-      expect(loginRes['success'], isTrue);
-      expect(loginRes['is_remote'], isTrue);
-      expect(loginRes['otp_token'], isNotNull);
-    }
+  test('formatarData converte ISO do backend para DD/MM/AAAA', () {
+    expect(ApiService.formatarData('2026-10-23T12:00:00Z'), isNotEmpty);
+    expect(ApiService.formatarData(null), '');
+    expect(ApiService.formatarData('inválido'), '');
   });
 }

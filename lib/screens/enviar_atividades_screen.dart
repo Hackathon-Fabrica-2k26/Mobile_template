@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/api_service.dart';
-import '../services/mock_data_service.dart';
 import 'loading_screen.dart';
 
 class EnviarAtividadesScreen extends StatefulWidget {
@@ -25,6 +24,7 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
   final _obsController = TextEditingController();
   late String _turmaSelecionada;
   List<String> _nomesTurmas = [];
+  List<Map<String, dynamic>> _turmas = [];
   final List<Map<String, String>> _arquivos = [];
 
   @override
@@ -35,10 +35,19 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
   }
 
   Future<void> _carregarDadosIniciais() async {
-    final turmas = await ApiService.instance.getTurmas();
-    final exemplos = await MockDataService.instance.getArquivosExemplo();
+    List<Map<String, dynamic>> turmas;
+    try {
+      turmas = await ApiService.instance.getTurmas();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
     if (!mounted) return;
     setState(() {
+      _turmas = turmas;
       _nomesTurmas = turmas
           .map((t) => (t['nome'] as String?) ?? '')
           .where((n) => n.isNotEmpty)
@@ -47,9 +56,6 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
           _nomesTurmas.isNotEmpty) {
         _turmaSelecionada = _nomesTurmas.first;
       }
-      _arquivos
-        ..clear()
-        ..addAll(exemplos);
     });
   }
 
@@ -67,13 +73,16 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
     });
   }
 
-  Future<void> _adicionarArquivo() async {
-    final exemplos = await MockDataService.instance.getArquivosExemplo();
-    if (!mounted || exemplos.isEmpty) return;
-    setState(() {
-      final proximo = exemplos[_arquivos.length % exemplos.length];
-      _arquivos.add(Map<String, String>.from(proximo));
-    });
+  void _adicionarArquivo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'O envio de arquivos ainda não está disponível no servidor. '
+          'Descreva a atividade no campo de observações.',
+        ),
+        backgroundColor: MarsupiTheme.primaryGreen,
+      ),
+    );
   }
 
   Future<void> _enviar() async {
@@ -87,20 +96,46 @@ class _EnviarAtividadesScreenState extends State<EnviarAtividadesScreen> {
       return;
     }
 
+    if (_obsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Descreva a atividade no campo de observações.'),
+          backgroundColor: MarsupiTheme.primaryGreen,
+        ),
+      );
+      return;
+    }
+
+    final turmaId = (_turmas.firstWhere(
+          (t) => t['nome'] == _turmaSelecionada,
+          orElse: () => {'id': widget.turmaId},
+        )['id'] as int?) ??
+        widget.turmaId;
+
+    String? erro;
     await showMarsupiLoading<void>(
       context,
       message: 'Carregando...',
       task: () async {
-        await Future.delayed(const Duration(milliseconds: 450));
-        await ApiService.instance.addAtividade(
-          turmaId: widget.turmaId,
-          nome: _tituloController.text.trim(),
-          dataAtividade: _dataController.text.trim(),
-          observacoes: _obsController.text.trim(),
-        );
+        try {
+          await ApiService.instance.addAtividade(
+            turmaId: turmaId,
+            titulo: _tituloController.text.trim(),
+            texto: _obsController.text.trim(),
+          );
+        } on ApiException catch (e) {
+          erro = e.message;
+        }
       },
     );
 
+    if (!mounted) return;
+    if (erro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(erro!), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }

@@ -33,6 +33,28 @@ void main() {
     },
   ];
 
+  final testResumo = {
+    'turmas_count': 2,
+    'estudantes_count': 47,
+    'atividades_count': 3,
+  };
+
+  final testAtividades = [
+    {
+      'id': 1,
+      'titulo': 'Explorando as vogais',
+      'data': '23/10/2026',
+      'status': 'Aprovada',
+      'concluida': true,
+      'descricao': 'Reconhecer vogais.',
+    },
+  ];
+
+  Future<Map<String, dynamic>> fakeUpdate(String name, String email) async => {
+        'success': true,
+        'user': {...testUser, 'nome': name, 'email': email},
+      };
+
   Widget buildTestableWidget(Widget child) {
     return MaterialApp(
       home: Scaffold(body: child),
@@ -51,6 +73,9 @@ void main() {
           PerfilScreen(
             initialUser: testUser,
             initialTurmas: testTurmas,
+            initialResumo: testResumo,
+            initialAtividades: testAtividades,
+            profileUpdater: fakeUpdate,
           ),
         ),
       );
@@ -115,6 +140,8 @@ void main() {
           PerfilScreen(
             initialUser: testUser,
             initialTurmas: const [],
+            initialResumo: testResumo,
+            initialAtividades: testAtividades,
           ),
         ),
       );
@@ -142,6 +169,9 @@ void main() {
           PerfilScreen(
             initialUser: testUser,
             initialTurmas: testTurmas,
+            initialResumo: testResumo,
+            initialAtividades: testAtividades,
+            profileUpdater: fakeUpdate,
           ),
         ),
       );
@@ -185,10 +215,11 @@ void main() {
       expect(find.text('Não foi possível carregar o perfil'), findsOneWidget);
       expect(find.text('Tentar novamente'), findsOneWidget);
 
-      // Clicar em tentar novamente
+      // Sem backend acessível, tentar novamente mantém o estado de erro
       await tester.tap(find.text('Tentar novamente'));
       await tester.pumpAndSettle();
-      expect(find.text('Dados do perfil'), findsOneWidget);
+      expect(find.text('Dados do perfil'), findsNothing);
+      expect(find.text('Tentar novamente'), findsOneWidget);
     });
 
     testWidgets('Estado 6: Aba Atividades recentes exibe filtros, lista e modal Ver',
@@ -202,6 +233,9 @@ void main() {
           PerfilScreen(
             initialUser: testUser,
             initialTurmas: testTurmas,
+            initialResumo: testResumo,
+            initialAtividades: testAtividades,
+            profileUpdater: fakeUpdate,
           ),
         ),
       );
@@ -239,6 +273,9 @@ void main() {
           PerfilScreen(
             initialUser: testUser,
             initialTurmas: testTurmas,
+            initialResumo: testResumo,
+            initialAtividades: testAtividades,
+            profileUpdater: fakeUpdate,
           ),
         ),
       );

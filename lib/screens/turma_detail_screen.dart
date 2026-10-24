@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/api_service.dart';
-import '../services/mock_data_service.dart';
+import 'package:image_picker/image_picker.dart';
 import 'aluno_detalhes_screen.dart';
 import 'enviar_atividades_screen.dart';
 import 'loading_screen.dart';
@@ -47,31 +47,88 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
     }
   }
 
+  String? _erro;
+
   Future<void> _loadData() async {
-    final user = await ApiService.instance.getUser();
-    final alunos =
-        await ApiService.instance.getAlunos(turmaId: widget.turmaId);
-    final ativs =
-        await ApiService.instance.getAtividades(turmaId: widget.turmaId);
-    if (mounted) {
-      setState(() {
-        _user = user;
-        _estudantes = alunos;
-        _atividades = ativs;
-        _isLoading = false;
-      });
+    try {
+      final user = await ApiService.instance.getUser();
+      final alunos =
+          await ApiService.instance.getAlunos(turmaId: widget.turmaId);
+      final ativs =
+          await ApiService.instance.getAtividades(turmaId: widget.turmaId);
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _estudantes = alunos;
+          _atividades = ativs;
+          _erro = null;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _erro = e.message;
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _adicionarFotoChamada() async {
+    final origem = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Tirar foto'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Enviar da galeria'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (origem == null || !mounted) return;
+
+    final foto = await ImagePicker()
+        .pickImage(source: origem, maxWidth: 2000, imageQuality: 85);
+    if (foto == null || !mounted) return;
+    final bytes = await foto.readAsBytes();
+    if (!mounted) return;
+
+    String? erro;
     final ocrNomes = await showMarsupiLoading<List<Map<String, dynamic>>>(
       context,
       message: 'Carregando...',
       task: () async {
-        await Future.delayed(const Duration(milliseconds: 500));
-        return MockDataService.instance.getChamadaOcrNomes();
+        try {
+          return await ApiService.instance.reconhecerChamada(
+            bytes: bytes,
+            filename: foto.name.isNotEmpty ? foto.name : 'chamada.jpg',
+          );
+        } on ApiException catch (e) {
+          erro = e.message;
+          return <Map<String, dynamic>>[];
+        }
       },
     );
+
+    if (erro != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(erro!), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
 
     if (!mounted || ocrNomes == null) return;
 
@@ -110,7 +167,7 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userAvatar = (_user['avatar'] as String?) ?? 'AP';
+    final userAvatar = (_user['avatar'] as String?) ?? '';
     final atividadesExibidas = _mostrarTodasAtividades
         ? _atividades
         : (_atividades.isNotEmpty ? [_atividades.first] : <Map<String, dynamic>>[]);
@@ -122,6 +179,26 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
             ? const Center(
                 child: CircularProgressIndicator(
                   color: MarsupiTheme.primaryGreen,
+                ),
+              )
+            : _erro != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_erro!, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() => _isLoading = true);
+                          _loadData();
+                        },
+                        child: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ),
                 ),
               )
             : SingleChildScrollView(

@@ -1,8 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/api_service.dart';
-import '../services/mock_data_service.dart';
 import 'loading_screen.dart';
 
 class NovaTurmaFotoScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
   String _turnoSelecionado = 'Manhã';
   bool _fotoAnexada = false;
   String? _origemFoto;
+  Uint8List? _fotoBytes;
+  String _fotoNome = 'chamada.jpg';
 
   @override
   void dispose() {
@@ -26,11 +29,28 @@ class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
     super.dispose();
   }
 
-  void _selecionarFoto(String origem) {
-    setState(() {
-      _fotoAnexada = true;
-      _origemFoto = origem;
-    });
+  Future<void> _selecionarFoto(String origem) async {
+    try {
+      final foto = await ImagePicker().pickImage(
+        source: origem == 'Câmera' ? ImageSource.camera : ImageSource.gallery,
+        maxWidth: 2000,
+        imageQuality: 85,
+      );
+      if (foto == null) return;
+      final bytes = await foto.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _fotoAnexada = true;
+        _origemFoto = origem;
+        _fotoBytes = bytes;
+        _fotoNome = foto.name.isNotEmpty ? foto.name : 'chamada.jpg';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível acessar a foto.')),
+      );
+    }
   }
 
   Future<void> _avancarParaRevisao() async {
@@ -40,7 +60,7 @@ class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
       );
       return;
     }
-    if (!_fotoAnexada) {
+    if (!_fotoAnexada || _fotoBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Envie ou tire uma foto da lista de chamada para reconhecer os nomes.'),
@@ -50,14 +70,31 @@ class _NovaTurmaFotoScreenState extends State<NovaTurmaFotoScreen> {
     }
 
     final anoLetivo = int.tryParse(_anoController.text.trim()) ?? 2026;
+    String? erro;
     final ocrNomes = await showMarsupiLoading<List<Map<String, dynamic>>>(
       context,
       message: 'Carregando...',
       task: () async {
-        await Future.delayed(const Duration(milliseconds: 500));
-        return MockDataService.instance.getChamadaOcrNomes();
+        try {
+          return await ApiService.instance.reconhecerChamada(
+            bytes: _fotoBytes!,
+            filename: _fotoNome,
+          );
+        } on ApiException catch (e) {
+          erro = e.message;
+          return <Map<String, dynamic>>[];
+        }
       },
     );
+
+    if (erro != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(erro!), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
 
     if (!mounted || ocrNomes == null) return;
 
@@ -613,27 +650,38 @@ class _ConfirmarNomesScreenState extends State<ConfirmarNomesScreen> {
   Future<void> _confirmarTurma() async {
     final listaFinal = _alunosOcr.map((a) => a['nome'] as String).toList();
 
+    String? erro;
     await showMarsupiLoading<void>(
       context,
       message: 'Carregando...',
       task: () async {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (widget.turmaId != null) {
-          await ApiService.instance.addAlunosNaTurma(
-            turmaId: widget.turmaId!,
-            nomesAlunos: listaFinal,
-          );
-        } else {
-          await ApiService.instance.addTurmaComAlunos(
-            nome: widget.nomeTurma,
-            turno: widget.turno,
-            anoLetivo: widget.anoLetivo,
-            nomesAlunos: listaFinal,
-          );
+        try {
+          if (widget.turmaId != null) {
+            await ApiService.instance.addAlunosNaTurma(
+              turmaId: widget.turmaId!,
+              nomesAlunos: listaFinal,
+            );
+          } else {
+            await ApiService.instance.addTurmaComAlunos(
+              nome: widget.nomeTurma,
+              turno: widget.turno,
+              anoLetivo: widget.anoLetivo,
+              nomesAlunos: listaFinal,
+            );
+          }
+        } on ApiException catch (e) {
+          erro = e.message;
         }
       },
     );
 
+    if (!mounted) return;
+    if (erro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(erro!), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
     if (!mounted) return;
     Navigator.pop(context, true);
   }

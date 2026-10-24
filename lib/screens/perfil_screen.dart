@@ -11,6 +11,12 @@ class PerfilScreen extends StatefulWidget {
   final bool? forceError;
   final List<Map<String, dynamic>>? initialTurmas;
   final Map<String, dynamic>? initialUser;
+  final Map<String, dynamic>? initialResumo;
+  final List<Map<String, dynamic>>? initialAtividades;
+
+  /// Permite injetar o salvamento do perfil (testes); por padrão usa a API.
+  final Future<Map<String, dynamic>> Function(String name, String email)?
+      profileUpdater;
 
   const PerfilScreen({
     super.key,
@@ -18,6 +24,9 @@ class PerfilScreen extends StatefulWidget {
     this.forceError,
     this.initialTurmas,
     this.initialUser,
+    this.initialResumo,
+    this.initialAtividades,
+    this.profileUpdater,
   });
 
   @override
@@ -85,8 +94,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
     try {
       final user = widget.initialUser ?? await ApiService.instance.getUser();
       final turmas = widget.initialTurmas ?? await ApiService.instance.getTurmas();
-      final resumo = await ApiService.instance.getResumoPerfil();
-      final atividades = await ApiService.instance.getAtividadesRecentes();
+      final resumo =
+          widget.initialResumo ?? await ApiService.instance.getResumoPerfil();
+      final atividades = widget.initialAtividades ??
+          await ApiService.instance.getAtividadesRecentes();
 
       if (mounted) {
         setState(() {
@@ -103,7 +114,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = 'Erro ao carregar dados do perfil: $e';
+          _errorMessage = e is ApiException ? e.message : 'Erro ao carregar dados do perfil.';
           _isLoading = false;
         });
       }
@@ -163,10 +174,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
     });
 
     try {
-      final result = await ApiService.instance.updateProfile(
-        name: newName,
-        email: _emailController.text.trim(),
-      );
+      final email = _emailController.text.trim();
+      final result = widget.profileUpdater != null
+          ? await widget.profileUpdater!(newName, email)
+          : await ApiService.instance.updateProfile(name: newName, email: email);
 
       if (mounted) {
         final updatedUser = (result['user'] as Map<String, dynamic>?) ?? _user;
@@ -191,7 +202,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao atualizar perfil: $e'),
+            content: Text(e is ApiException ? e.message : 'Erro ao atualizar perfil.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -490,8 +501,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
   // CABEÇALHO DO PROFESSOR (NORMAL)
   // ==========================================
   Widget _buildTeacherHeader() {
-    final avatar = (_user['avatar'] as String?) ?? 'PD';
-    final nome = (_user['nome'] as String?) ?? 'Professor Demo';
+    final avatar = (_user['avatar'] as String?) ?? '';
+    final nome = (_user['nome'] as String?) ?? '';
 
     return Column(
       children: [
@@ -881,7 +892,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   // ==========================================
   Widget _buildSummaryCards() {
     final turmasCount = _resumo['turmas_count']?.toString() ?? _turmas.length.toString();
-    final estudantesCount = _resumo['estudantes_count']?.toString() ?? '6';
+    final estudantesCount = _resumo['estudantes_count']?.toString() ?? '0';
     final atividadesCount = _resumo['atividades_count']?.toString() ?? _atividades.length.toString();
 
     return Row(
@@ -1111,7 +1122,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final id = turma['id'] as int? ?? 1;
     final nome = turma['nome'] as String? ?? 'Turma';
     final turno = turma['turno'] as String? ?? 'Manhã';
-    final anoLetivo = turma['ano_letivo']?.toString() ?? '2026';
+    final anoLetivo = turma['ano_letivo']?.toString();
     final count = turma['estudantes_count']?.toString() ?? '0';
 
     return Material(
@@ -1145,7 +1156,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
           ),
         ),
         subtitle: Text(
-          '$turno • $anoLetivo • $count estudantes',
+          [turno, ?anoLetivo, '$count estudantes'].join(' • '),
           style: GoogleFonts.poppins(
             fontSize: 11,
             color: MarsupiColors.textMuted,
@@ -1363,9 +1374,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   itemBuilder: (ctx, index) {
                     final item = atividades[index];
                     final titulo = item['titulo'] as String? ?? 'Atividade';
-                    final data = item['data'] as String? ?? '23/10/2026';
-                    final status = item['status'] as String? ?? 'Concluída';
-                    final isConcluida = status.toLowerCase().contains('concluíd');
+                    final data = item['data'] as String? ?? '';
+                    final status = item['status'] as String? ?? '';
+                    final isConcluida = item['concluida'] == true;
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1464,19 +1475,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Data: ${item['data'] ?? '23/10/2026'}',
+              'Data: ${item['data'] ?? ''}',
               style: GoogleFonts.poppins(fontSize: 13, color: MarsupiColors.textMuted),
             ),
             const SizedBox(height: 6),
             Text(
-              'Status: ${item['status'] ?? 'Concluída'}',
+              'Status: ${item['status'] ?? ''}',
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: MarsupiTheme.primaryGreen,
               ),
             ),
-            if (item['descricao'] != null) ...[
+            if ((item['descricao'] as String?)?.isNotEmpty == true) ...[
               const SizedBox(height: 8),
               Text(
                 item['descricao'] as String,

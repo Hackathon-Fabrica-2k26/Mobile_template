@@ -47,7 +47,7 @@ A modelagem de dados foi totalmente alinhada ao contrato atual do backend Django
 
 O cliente de rede ([api_service.dart](lib/services/api_service.dart)) opera em modo híbrido:
 - Conecta-se aos endpoints REST autenticados via JWT (`/api/auth/login/`, `/api/auth/otp/verify/`, `/api/turmas/`, `/api/alunos/`, `/api/atividades/`).
-- Possui **fallback gracioso automático** para o [mock_data.json](assets/data/mock_data.json) caso o backend esteja temporariamente offline ou inacessível.
+- Consome **exclusivamente dados do backend** (sem mocks nem fallback offline): se o servidor estiver inacessível, as telas exibem a mensagem de erro e a opção "Tentar novamente".
 
 ### Configurando a URL da API em Tempo de Compilação
 

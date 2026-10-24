@@ -34,14 +34,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final user = await ApiService.instance.getUser();
-    final turmas = await ApiService.instance.getTurmas();
-    if (mounted) {
-      setState(() {
-        _user = user;
-        _turmas = turmas;
-        _isLoading = false;
-      });
+    try {
+      final user = await ApiService.instance.getUser();
+      final turmas = await ApiService.instance.getTurmas();
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _turmas = turmas;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
