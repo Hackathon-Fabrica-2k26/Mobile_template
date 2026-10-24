@@ -38,13 +38,23 @@ class _LoginScreenState extends State<LoginScreen> {
       task: () => ApiService.instance.login(matricula, senha),
     );
 
-    if (mounted && (result?['success'] == true)) {
-      final email = (result?['email'] as String?) ?? '';
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OtpScreen(email: email),
-        ),
-      );
+    if (mounted) {
+      if (result?['success'] == true) {
+        final email = (result?['email'] as String?) ?? '';
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OtpScreen(email: email),
+          ),
+        );
+      } else {
+        final errorMsg = result?['error'] as String? ?? 'Matrícula ou senha incorretos.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 

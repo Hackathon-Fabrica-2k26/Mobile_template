@@ -8,9 +8,13 @@ void main() {
     // Com url inexistente, fallback funciona sem quebrar a app
     api.setBaseUrl('http://127.0.0.1:9999');
 
-    final loginRes = await api.login('PROF2026', 'qualquer_senha');
+    final loginRes = await api.login('PROF2026', 'user123');
     expect(loginRes['success'], isTrue);
     expect(loginRes['is_remote'], isFalse);
+
+    final loginInvalido = await api.login('PROF2026', 'senha_errada');
+    expect(loginInvalido['success'], isFalse);
+    expect(loginInvalido['error'], isNotNull);
 
     final turmas = await api.getTurmas();
     expect(turmas.isNotEmpty, isTrue);
@@ -29,7 +33,7 @@ void main() {
 
     final isAlive = await api.checkBackendHealth();
     if (isAlive) {
-      final loginRes = await api.login('DEMO0001', 'demo-senha-123');
+      final loginRes = await api.login('DEMO0001', 'user123');
       expect(loginRes['success'], isTrue);
       expect(loginRes['is_remote'], isTrue);
       expect(loginRes['otp_token'], isNotNull);

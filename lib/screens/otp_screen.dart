@@ -62,17 +62,27 @@ class _OtpScreenState extends State<OtpScreen> {
       return;
     }
 
-    final success = await showMarsupiLoading<bool>(
+    final result = await showMarsupiLoading<Map<String, dynamic>>(
       context,
       message: 'Carregando...',
       task: () => ApiService.instance.verifyOtp(code),
     );
 
-    if (mounted && (success ?? false)) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+    if (mounted) {
+      if (result?['success'] == true) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        final errorMsg = result?['error'] as String? ?? 'Código de verificação incorreto.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 

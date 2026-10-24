@@ -25,10 +25,13 @@ void main() {
     });
 
     test('validação de autenticação e OTP', () async {
-      expect(await MockDataService.instance.authenticate('PROF2026', '123456'), isTrue);
+      expect(await MockDataService.instance.authenticate('PROF2026', 'user123'), isTrue);
+      expect(await MockDataService.instance.authenticate('PROF2026', 'senha_errada'), isFalse);
       expect(await MockDataService.instance.authenticate('', ''), isFalse);
 
       expect(await MockDataService.instance.verifyOtp('1234'), isTrue);
+      expect(await MockDataService.instance.verifyOtp('2026'), isTrue);
+      expect(await MockDataService.instance.verifyOtp('0000'), isFalse);
       expect(await MockDataService.instance.verifyOtp('12'), isFalse);
     });
   });

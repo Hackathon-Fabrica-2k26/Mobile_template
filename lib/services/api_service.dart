@@ -52,15 +52,17 @@ class ApiService {
     }
   }
 
-  /// Autenticação: tenta a API /api/auth/login/. Se falhar ou offline, fallback para MockDataService.
+  /// Autenticação: tenta a API /api/auth/login/. Se falhar por credenciais inválidas, retorna o erro.
+  /// Se o backend estiver offline, usa fallback de validação segura do MockDataService.
   Future<Map<String, dynamic>> login(String matricula, String password) async {
+    final cleanMatricula = matricula.trim();
     try {
       final res = await http
           .post(
             Uri.parse('$baseUrl/api/auth/login/'),
             headers: _headers(withAuth: false),
             body: jsonEncode({
-              'matricula': matricula.trim(),
+              'matricula': cleanMatricula,
               'password': password,
             }),
           )
@@ -76,23 +78,40 @@ class ApiService {
           'otp_token': _lastOtpToken,
           'email': _lastUserEmail,
         };
+      } else if (res.statusCode == 400 || res.statusCode == 401) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>?;
+        final detail = data?['detail'] as String? ?? 'Matrícula ou senha incorretos.';
+        return {
+          'success': false,
+          'is_remote': true,
+          'error': detail,
+        };
       }
     } catch (_) {
-      // Fallback
+      // Backend offline: segue para validação mock
     }
 
-    final mockOk = await MockDataService.instance.authenticate(matricula, password);
+    final mockOk = await MockDataService.instance.authenticate(cleanMatricula, password);
+    if (!mockOk) {
+      return {
+        'success': false,
+        'is_remote': false,
+        'error': 'Credenciais inválidas. Verifique sua matrícula e senha.',
+      };
+    }
+
     final user = await MockDataService.instance.getUser();
     return {
-      'success': mockOk,
+      'success': true,
       'is_remote': false,
       'otp_token': null,
-      'email': user['email'] ?? 'professor@demo.com',
+      'email': user['email'] ?? 'matheus.vidal.zenere@gmail.com',
     };
   }
 
-  /// Verificação do OTP
-  Future<bool> verifyOtp(String code) async {
+  /// Verificação do OTP com retorno do status e mensagem de erro
+  Future<Map<String, dynamic>> verifyOtp(String code) async {
+    final cleanCode = code.trim();
     if (_lastOtpToken != null) {
       try {
         final res = await http
@@ -101,7 +120,7 @@ class ApiService {
               headers: _headers(withAuth: false),
               body: jsonEncode({
                 'otp_token': _lastOtpToken,
-                'code': code.trim(),
+                'code': cleanCode,
               }),
             )
             .timeout(const Duration(seconds: 4));
@@ -111,14 +130,28 @@ class ApiService {
           _accessToken = data['access'] as String?;
           _refreshToken = data['refresh'] as String?;
           await getUser();
-          return true;
+          return {'success': true};
+        } else {
+          final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>?;
+          final error = data?['detail'] as String? ?? 'Código de verificação incorreto ou expirado.';
+          return {
+            'success': false,
+            'error': error,
+          };
         }
       } catch (_) {
         // Fallback
       }
     }
 
-    return await MockDataService.instance.verifyOtp(code);
+    final mockValid = await MockDataService.instance.verifyOtp(cleanCode);
+    if (mockValid) {
+      return {'success': true};
+    }
+    return {
+      'success': false,
+      'error': 'Código de verificação incorreto.',
+    };
   }
 
   /// Reenviar código OTP

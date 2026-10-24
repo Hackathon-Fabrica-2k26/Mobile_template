@@ -59,15 +59,20 @@ class MockDataService {
     return list.map((e) => Map<String, String>.from(e as Map)).toList();
   }
 
-  /// Validação de login
+  /// Validação de login: valida senha correta ('user123')
   Future<bool> authenticate(String matricula, String senha) async {
     await Future.delayed(const Duration(milliseconds: 350));
-    return matricula.trim().isNotEmpty && senha.isNotEmpty;
+    final cleanMatricula = matricula.trim();
+    if (cleanMatricula.isEmpty) return false;
+    // Aceita user123 como padrão para qualquer usuário
+    return senha == 'user123';
   }
 
   Future<bool> verifyOtp(String code) async {
     await Future.delayed(const Duration(milliseconds: 350));
-    return code.trim().length == 4;
+    // Em mock/offline aceita 1234 ou 2026 como código válido de teste
+    final c = code.trim();
+    return c == '1234' || c == '2026';
   }
 
   /// Cria uma nova turma e adiciona seus alunos reconhecidos pelo OCR da foto da chamada
