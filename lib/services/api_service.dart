@@ -704,8 +704,8 @@ class ApiService {
   }
 
   /// Envia fotos/arquivos de trabalhos dos alunos (POST /api/atividades/{id}/trabalhos/).
-  /// Recebe cada item de [arquivos] no formato {'bytes': List<int>, 'filename': String}.
-  /// Devolve EnvioTrabalhos {id, atividade, total_arquivos, trabalhos: [{id, aluno, nome_lido, confianca_nome, identificacao}]}.
+  /// Recebe cada item de [arquivos] no formato `{'bytes': List<int>, 'filename': String}`.
+  /// Devolve EnvioTrabalhos `{id, atividade, total_arquivos, trabalhos: [{id, aluno, nome_lido, confianca_nome, identificacao}]}`.
   Future<Map<String, dynamic>> enviarTrabalhos({
     required int atividadeId,
     required List<Map<String, dynamic>> arquivos,
