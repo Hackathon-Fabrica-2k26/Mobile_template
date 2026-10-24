@@ -21,7 +21,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ConfirmarNomesScreen(
-          nomeTurma: '1º ano A',
+          nomeTurma: 'Turma A',
           turno: 'Manhã',
           anoLetivo: 2026,
           nomesIniciais: nomes,
@@ -32,37 +32,37 @@ void main() {
 
     expect(find.text('Confira os nomes'), findsOneWidget);
     expect(find.text('ETAPA 2 DE 2 · CONFERIR E CRIAR'), findsOneWidget);
-    expect(find.text('8 nomes encontrados'), findsOneWidget);
-    expect(find.text('Alice Santos'), findsOneWidget);
-    expect(find.text('Davi Pereira'), findsOneWidget);
-    expect(find.text('Confirmar 8 alunos'), findsOneWidget);
+    expect(find.text('${nomes.length} nomes encontrados'), findsOneWidget);
+    expect(find.text('Aluno Alfa'), findsOneWidget);
+    expect(find.text('Aluno Gama'), findsOneWidget);
+    expect(find.text('Confirmar ${nomes.length} alunos'), findsOneWidget);
   });
 
   testWidgets('TurmaDetailScreen renderiza Alunos cadastrados e Sem alunos conforme Figma', (WidgetTester tester) async {
-    // Turma 1 tem 8 estudantes no JSON
+    // Turma 1 tem 3 estudantes (Aluno Alfa, Beta, Gama)
     await tester.pumpWidget(
       const MaterialApp(
         home: TurmaDetailScreen(
           turmaId: 1,
-          turmaNome: '1º ano A',
+          turmaNome: 'Turma A',
           turno: 'Manhã',
-          totalAlunos: 8,
+          totalAlunos: 3,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Estudantes da turma'), findsOneWidget);
-    expect(find.text('Alice Santos'), findsOneWidget);
-    expect(find.text('8 estudantes cadastrados'), findsOneWidget);
+    expect(find.text('Aluno Alfa'), findsOneWidget);
+    expect(find.text('3 estudantes cadastrados'), findsOneWidget);
     expect(find.text('Atividades da turma'), findsOneWidget);
 
-    // Turma 2 não possui estudantes cadastrados -> exibe Sem alunos (326:78)
+    // Turma 99 não possui estudantes cadastrados -> exibe Sem alunos (326:78)
     await tester.pumpWidget(
       const MaterialApp(
         home: TurmaDetailScreen(
-          turmaId: 2,
-          turmaNome: '2º ano B',
+          turmaId: 99,
+          turmaNome: 'Turma Vazia',
           turno: 'Tarde',
           totalAlunos: 0,
         ),

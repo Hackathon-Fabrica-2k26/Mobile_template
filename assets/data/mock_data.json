@@ -1,91 +1,76 @@
 {
   "user": {
-    "id": 1,
-    "nome": "Ana Paula",
-    "matricula": "PROF2026",
-    "email": "ana.professora@escola.edu.br",
-    "escola": "CEI Araquari",
-    "avatar": "AP"
+    "id": 2,
+    "nome": "Professor Demo",
+    "matricula": "DEMO0001",
+    "email": "professor@demo.com",
+    "escola": "Escola Marsupi Demo",
+    "avatar": "PD"
   },
   "turmas": [
     {
       "id": 1,
-      "nome": "1º ano A",
+      "nome": "Turma A",
       "turno": "Manhã",
       "ano_letivo": 2026,
-      "estudantes_count": 8,
+      "estudantes_count": 3,
       "icon": "book"
     },
     {
       "id": 2,
-      "nome": "2º ano B",
-      "turno": "Tarde",
-      "ano_letivo": 2026,
-      "estudantes_count": 28,
-      "icon": "book"
-    },
-    {
-      "id": 3,
-      "nome": "3º ano A",
+      "nome": "Turma B",
       "turno": "Manhã",
       "ano_letivo": 2026,
-      "estudantes_count": 26,
-      "icon": "desk"
+      "estudantes_count": 3,
+      "icon": "book"
     }
   ],
   "alunos": [
     {
-      "id": 101,
+      "id": 1,
       "turma_id": 1,
-      "nome": "Alice Santos",
+      "nome": "Aluno Alfa",
       "avatar": "A",
-      "matricula": "AL-2026-014",
+      "matricula": "AL-2026-001",
       "nascimento": "14/03/2019 · 7 anos",
       "status": "Aluno ativo",
       "precisa_conferencia": false,
-      "acompanhamento": "Participa das propostas em sala e demonstra interesse pela leitura, escrita e atividades de contagem.",
-      "perfil_disc": "Estabilidade",
+      "acompanhamento": "Perfil com alto raciocínio visual e forte motivação por temáticas exploratórias, necessitando de suporte para autorregulação motora e previsibilidade sensorial.",
       "radar_metrics": {
-        "Foco sustentado": 45,
+        "Foco sustentado": 40,
         "Raciocínio visual": 90,
         "Interação social": 80,
-        "Regulação sensorial": 55,
+        "Regulação sensorial": 50,
         "Coordenação fina": 60
       },
       "strengths": [
-        "Excelente memória visual e rápida assimilação de símbolos",
-        "Facilidade para colaborar e empatia com colegas"
+        "Memória fotográfica e facilidade para associar símbolos visuais",
+        "Empatia e disposição para dinâmicas colaborativas"
       ],
       "support_needs": [
-        "Pausas ativas para autorregulação motora a cada 15 min",
-        "Pistas visuais claras de rotina para diminuir ansiedade"
+        "Pausas ativas a cada 10 a 15 minutos para regulação física",
+        "Uso de pistas visuais de rotina para diminuir ansiedade"
       ],
-      "dica_autonomia": "Professor, explore o raciocínio visual elevado de Alice para introduzir desafios de escrita em formato de mapas mentais.",
-      "codigo_acesso": "MARS-7821",
+      "dica_autonomia": "Professor, você notou se o aluno reage melhor quando o comando é falado ou quando há um desenho no quadro? Experimente pedir à IA: 'Como adaptar a instrução de matemática usando ícones visuais?'",
+      "codigo_acesso": "MARS-7801",
       "atividades": [
         {
-          "titulo": "Explorando as vogais",
+          "titulo": "Missão Espacial: Caligrafia nas Estrelas",
           "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Reconhece as vogais nas palavras trabalhadas."
-        },
-        {
-          "titulo": "Contando até 10",
-          "data_envio": "Enviada em 21/10/2026",
-          "observacao": "Associa os números às quantidades apresentadas."
+          "observacao": "Trabalhar coordenação motora usando o hiperfoco em planetas. Traçado com autonomia."
         }
       ]
     },
     {
-      "id": 102,
+      "id": 2,
       "turma_id": 1,
-      "nome": "Arthur Oliveira",
-      "avatar": "A",
-      "matricula": "AL-2026-015",
+      "nome": "Aluno Beta",
+      "avatar": "B",
+      "matricula": "AL-2026-002",
       "nascimento": "05/06/2019 · 7 anos",
       "status": "Aluno ativo",
       "precisa_conferencia": false,
-      "acompanhamento": "Excelente desempenho em dinâmicas de raciocínio lógico e cooperação em grupo.",
-      "perfil_disc": "Dominância",
+      "acompanhamento": "Rotina estável e leitura assídua. Demonstra bom engajamento nas atividades individuais e concentração prolongada.",
       "radar_metrics": {
         "Foco sustentado": 75,
         "Raciocínio visual": 80,
@@ -94,230 +79,156 @@
         "Coordenação fina": 70
       },
       "strengths": [
-        "Raciocínio quantitativo rápido",
-        "Iniciativa em atividades coletivas"
+        "Leitura fluida e boa retenção textual",
+        "Atenção às orientações do professor"
       ],
       "support_needs": [
-        "Apoio na transição entre atividades teóricas e práticas"
+        "Incentivo à participação em dinâmicas de debate coletivo"
       ],
-      "dica_autonomia": "Atribua metas intermediárias claras para manter o foco em tarefas extensas.",
-      "codigo_acesso": "MARS-7822",
+      "dica_autonomia": "Incentive o aluno a liderar a leitura de enunciados para pequenos grupos.",
+      "codigo_acesso": "MARS-7802",
       "atividades": [
         {
-          "titulo": "Explorando as vogais",
+          "titulo": "Missão Espacial: Caligrafia nas Estrelas",
           "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Completou todas as associações com autonomia."
+          "observacao": "Concluiu a escrita com precisão e capricho no traçado."
         }
       ]
     },
     {
-      "id": 103,
+      "id": 3,
       "turma_id": 1,
-      "nome": "Beatriz Costa",
-      "avatar": "B",
-      "matricula": "AL-2026-016",
+      "nome": "Aluno Gama",
+      "avatar": "G",
+      "matricula": "AL-2026-003",
       "nascimento": "19/08/2019 · 7 anos",
-      "status": "Aluno ativo",
-      "precisa_conferencia": false,
-      "acompanhamento": "Demonstra grande interesse por contação de histórias e artes visuais.",
-      "perfil_disc": "Influência",
+      "status": "Conferir nome",
+      "precisa_conferencia": true,
+      "acompanhamento": "Perfil analítico, com atenção a detalhes e precisão em jogos de raciocínio lógico como xadrez.",
       "radar_metrics": {
-        "Foco sustentado": 65,
+        "Foco sustentado": 85,
         "Raciocínio visual": 85,
-        "Interação social": 90,
+        "Interação social": 65,
         "Regulação sensorial": 70,
         "Coordenação fina": 80
       },
       "strengths": [
-        "Comunicação expressiva e criatividade",
-        "Empatia no trabalho em duplas"
+        "Raciocínio estratégico e atenção a regras",
+        "Persistência na resolução de problemas complexos"
       ],
       "support_needs": [
-        "Exercícios de foco direcionado em tarefas individuais"
+        "Flexibilidade em momentos de mudança imprevista de rotina"
       ],
-      "dica_autonomia": "Utilize recursos de desenho e dramatização para fixar novos conceitos.",
-      "codigo_acesso": "MARS-7823",
+      "dica_autonomia": "Avise com 5 minutos de antecedência antes de transições de aula.",
+      "codigo_acesso": "MARS-7803",
       "atividades": [
         {
-          "titulo": "Explorando as vogais",
+          "titulo": "Missão Espacial: Caligrafia nas Estrelas",
           "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Identificou as vogais ilustrando cada elemento correspondente."
+          "observacao": "Associação lógica imediata dos traçados de constelações."
         }
       ]
     },
     {
-      "id": 104,
-      "turma_id": 1,
-      "nome": "Davi Pereira",
+      "id": 4,
+      "turma_id": 2,
+      "nome": "Aluno Delta",
       "avatar": "D",
-      "matricula": "AL-2026-017",
+      "matricula": "AL-2026-004",
       "nascimento": "11/01/2019 · 7 anos",
-      "status": "Conferir nome",
-      "precisa_conferencia": true,
-      "acompanhamento": "Necessita de apoio específico na preensão motora fina e pausas para evitar fadiga.",
-      "perfil_disc": "Estabilidade",
-      "radar_metrics": {
-        "Foco sustentado": 55,
-        "Raciocínio visual": 75,
-        "Interação social": 65,
-        "Regulação sensorial": 50,
-        "Coordenação fina": 45
-      },
-      "strengths": [
-        "Boa compreensão auditiva",
-        "Perseverança em jogos pedagógicos"
-      ],
-      "support_needs": [
-        "Engrossador de lápis e tempo estendido para escrita",
-        "Pausas ativas motoras a cada 15 minutos"
-      ],
-      "dica_autonomia": "Fracione tarefas escritas em etapas curtas para evitar frustração motora.",
-      "codigo_acesso": "MARS-7824",
-      "atividades": [
-        {
-          "titulo": "Explorando as vogais",
-          "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Demonstrou esforço no traçado. Concluiu com auxílio de guia pontilhada."
-        }
-      ]
-    },
-    {
-      "id": 105,
-      "turma_id": 1,
-      "nome": "Helena Martins",
-      "avatar": "H",
-      "matricula": "AL-2026-018",
-      "nascimento": "22/11/2019 · 6 anos",
       "status": "Aluno ativo",
       "precisa_conferencia": false,
-      "acompanhamento": "Atenção exemplar a regras da sala e organização do ambiente escolar.",
-      "perfil_disc": "Conformidade",
+      "acompanhamento": "Perfil dominante, lidera naturalmente os colegas e prefere metas curtas e objetivas; demonstra frustração em atividades longas e repetitivas.",
       "radar_metrics": {
-        "Foco sustentado": 85,
-        "Raciocínio visual": 75,
-        "Interação social": 60,
-        "Regulação sensorial": 80,
-        "Coordenação fina": 85
-      },
-      "strengths": [
-        "Capacidade de concentração e cuidado com materiais",
-        "Precisão em traçados e desenhos"
-      ],
-      "support_needs": [
-        "Incentivo à expressão espontânea sem receio de errar"
-      ],
-      "dica_autonomia": "Valide o processo de tentativa para reduzir a ansiedade pelo resultado perfeito.",
-      "codigo_acesso": "MARS-7825",
-      "atividades": [
-        {
-          "titulo": "Explorando as vogais",
-          "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Traçado impecável e associação correta de todos os grafemas."
-        }
-      ]
-    },
-    {
-      "id": 106,
-      "turma_id": 1,
-      "nome": "Lucas Almeida",
-      "avatar": "L",
-      "matricula": "AL-2026-019",
-      "nascimento": "03/04/2019 · 7 anos",
-      "status": "Aluno ativo",
-      "precisa_conferencia": false,
-      "acompanhamento": "Ativo nas rodas de conversa, comunicação verbal fluida e expressiva.",
-      "perfil_disc": "Influência",
-      "radar_metrics": {
-        "Foco sustentado": 60,
+        "Foco sustentado": 65,
         "Raciocínio visual": 70,
         "Interação social": 85,
         "Regulação sensorial": 60,
-        "Coordenação fina": 65
+        "Coordenação fina": 45
       },
       "strengths": [
-        "Comunicação verbal rica e rápida socialização",
-        "Interesse por temas de ciências e natureza"
+        "Tomada de iniciativa rapidamente nas atividades em grupo",
+        "Comunicação assertiva com colegas e professores"
       ],
       "support_needs": [
-        "Organização de rotina e aguardar a vez na fala"
+        "Dividir tarefas longas em desafios menores com metas visíveis",
+        "Reforço positivo para sofrer menos quando comete erros"
       ],
-      "dica_autonomia": "Combine sinais visuais discretos para indicar os momentos de escuta atenta.",
-      "codigo_acesso": "MARS-7826",
+      "dica_autonomia": "Professor, tente oferecer duas opções de desafio e deixe o aluno escolher antes de começar; alunos com perfil dominante aderem melhor quando sentem que decidiram.",
+      "codigo_acesso": "MARS-7804",
       "atividades": [
         {
-          "titulo": "Explorando as vogais",
+          "titulo": "Camarada da Turma: Desafio Relâmpago",
           "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Identificou as vogais verbalizando os nomes dos animais em voz alta."
+          "observacao": "Conduziu sua equipe com entusiasmo e concluiu os objetivos da rodada."
         }
       ]
     },
     {
-      "id": 107,
-      "turma_id": 1,
-      "nome": "Maria Eduarda Lima",
-      "avatar": "M",
-      "matricula": "AL-2026-020",
-      "nascimento": "17/09/2019 · 7 anos",
-      "status": "Conferir nome",
-      "precisa_conferencia": true,
-      "acompanhamento": "Rápida compreensão de padrões visuais e raciocínio matemático inicial.",
-      "perfil_disc": "Conformidade",
-      "radar_metrics": {
-        "Foco sustentado": 80,
-        "Raciocínio visual": 90,
-        "Interação social": 65,
-        "Regulação sensorial": 75,
-        "Coordenação fina": 80
-      },
-      "strengths": [
-        "Resolução rápida de problemas lógicos",
-        "Memória de sequências e seriação"
-      ],
-      "support_needs": [
-        "Adaptação a atividades que envolvam ruídos intensos"
-      ],
-      "dica_autonomia": "Ofereça cantinhos de leitura silenciosos após momentos de recreio ou estímulo sonoro.",
-      "codigo_acesso": "MARS-7827",
-      "atividades": [
-        {
-          "titulo": "Explorando as vogais",
-          "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Associação rápida e precisa das vogais em sequência alfabética."
-        }
-      ]
-    },
-    {
-      "id": 108,
-      "turma_id": 1,
-      "nome": "Miguel Souza",
-      "avatar": "M",
-      "matricula": "AL-2026-021",
-      "nascimento": "30/12/2019 · 6 anos",
+      "id": 5,
+      "turma_id": 2,
+      "nome": "Aluno Épsilon",
+      "avatar": "E",
+      "matricula": "AL-2026-005",
+      "nascimento": "22/11/2019 · 6 anos",
       "status": "Aluno ativo",
       "precisa_conferencia": false,
-      "acompanhamento": "Entusiasmo e colaboração ativa com colegas de mesa.",
-      "perfil_disc": "Dominância",
+      "acompanhamento": "Perfil expressivo e socialmente comunicativo, com grande admiração por música e dinâmicas sonoras.",
       "radar_metrics": {
-        "Foco sustentado": 70,
+        "Foco sustentado": 60,
         "Raciocínio visual": 75,
-        "Interação social": 80,
-        "Regulação sensorial": 70,
+        "Interação social": 90,
+        "Regulação sensorial": 65,
         "Coordenação fina": 70
       },
       "strengths": [
-        "Liderança positiva e disposição para cooperar",
-        "Boa retenção de orientações gerais"
+        "Comunicação empática e excelente integração social",
+        "Criatividade em soluções colaborativas"
       ],
       "support_needs": [
-        "Desenvolver calma na finalização de exercícios"
+        "Foco em tarefas individuais com suporte auditivo suave"
       ],
-      "dica_autonomia": "Convide Miguel para checar seu próprio caderno antes de entregar a atividade.",
-      "codigo_acesso": "MARS-7828",
+      "dica_autonomia": "Use canções curtas ou rimas para memorização de comandos de rotina.",
+      "codigo_acesso": "MARS-7805",
       "atividades": [
         {
-          "titulo": "Explorando as vogais",
+          "titulo": "Camarada da Turma: Desafio Relâmpago",
           "data_envio": "Enviada em 23/10/2026",
-          "observacao": "Completou a atividade com rapidez e auxiliou os colegas de mesa."
+          "observacao": "Excelente colaboração com o time durante as rodadas do desafio."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "turma_id": 2,
+      "nome": "Aluno Zeta",
+      "avatar": "Z",
+      "matricula": "AL-2026-006",
+      "nascimento": "03/04/2019 · 7 anos",
+      "status": "Conferir nome",
+      "precisa_conferencia": true,
+      "acompanhamento": "Perfil calmo e resiliente, colaboração constante em equipes com postura agregadora.",
+      "radar_metrics": {
+        "Foco sustentado": 75,
+        "Raciocínio visual": 70,
+        "Interação social": 80,
+        "Regulação sensorial": 75,
+        "Coordenação fina": 70
+      },
+      "strengths": [
+        "Paciência e mediação harmoniosa de conflitos",
+        "Disposição para ajudar colegas em dificuldades"
+      ],
+      "support_needs": [
+        "Incentivo para expor suas próprias opiniões com segurança"
+      ],
+      "dica_autonomia": "Valorize explicitamente as contribuições individuais de Zeta perante a turma.",
+      "codigo_acesso": "MARS-7806",
+      "atividades": [
+        {
+          "titulo": "Camarada da Turma: Desafio Relâmpago",
+          "data_envio": "Enviada em 23/10/2026",
+          "observacao": "Mediação tranquila e apoio consistente aos membros da mesa."
         }
       ]
     }
@@ -326,84 +237,68 @@
     {
       "id": 1,
       "turma_id": 1,
-      "nome": "Explorando as vogais",
+      "nome": "Missão Espacial: Caligrafia nas Estrelas",
       "tipo": "Linguagem / Alfabetização",
-      "relatorios_count": 8,
-      "descricao": "Atividade interativa de associação de sons e grafemas através de gravuras ilustradas da natureza."
+      "relatorios_count": 3,
+      "descricao": "Trabalhar coordenação motora usando o hiperfoco em planetas. Traçado de constelações com guias pontilhadas."
     },
     {
       "id": 2,
-      "turma_id": 1,
-      "nome": "Contando até 10",
+      "turma_id": 2,
+      "nome": "Camarada da Turma: Desafio Relâmpago",
       "tipo": "Raciocínio Lógico & Números",
-      "relatorios_count": 8,
-      "descricao": "Contagem e associação de quantidades com sementes e blocos de montar."
-    },
-    {
-      "id": 3,
-      "turma_id": 1,
-      "nome": "Missão Espacial: Caligrafia nas Estrelas",
-      "tipo": "Coordenação Motora",
-      "relatorios_count": 8,
-      "descricao": "Traçado de constelações pontilhadas com estímulo tátil e visual de astronomia."
+      "relatorios_count": 3,
+      "descricao": "Desafio de resolução rápida em equipe com rotação de liderança para dinâmicas colaborativas."
     }
   ],
   "chamada_ocr_template": [
     {
-      "nome": "Alice Santos",
+      "nome": "Aluno Alfa",
       "precisaConferencia": false
     },
     {
-      "nome": "Arthur Oliveira",
+      "nome": "Aluno Beta",
       "precisaConferencia": false
     },
     {
-      "nome": "Beatriz Costa",
-      "precisaConferencia": false
-    },
-    {
-      "nome": "Davi Pereira",
+      "nome": "Aluno Gama",
       "precisaConferencia": true
     },
     {
-      "nome": "Helena Martins",
+      "nome": "Aluno Delta",
       "precisaConferencia": false
     },
     {
-      "nome": "Lucas Almeida",
+      "nome": "Aluno Épsilon",
       "precisaConferencia": false
     },
     {
-      "nome": "Maria Eduarda Lima",
+      "nome": "Aluno Zeta",
       "precisaConferencia": true
-    },
-    {
-      "nome": "Miguel Souza",
-      "precisaConferencia": false
     }
   ],
   "trabalhos_submissao_template": [
     {
-      "arquivo": "trabalho_01.jpg",
-      "alunoReconhecido": "Alice Santos",
+      "arquivo": "trabalho_alfa_missao.jpg",
+      "alunoReconhecido": "Aluno Alfa",
       "duvida": false,
       "status": "Nome nítido no cabeçalho"
     },
     {
-      "arquivo": "trabalho_02.jpg",
-      "alunoReconhecido": "Arthur Oliveira",
+      "arquivo": "trabalho_beta_missao.jpg",
+      "alunoReconhecido": "Aluno Beta",
       "duvida": false,
       "status": "Nome nítido no cabeçalho"
     },
     {
-      "arquivo": "trabalho_03.jpg",
-      "alunoReconhecido": "Davi Pereira",
+      "arquivo": "trabalho_gama_missao.jpg",
+      "alunoReconhecido": "Aluno Gama",
       "duvida": true,
       "status": "Caligrafia com traço leve - confirme o aluno"
     },
     {
-      "arquivo": "trabalho_04.jpg",
-      "alunoReconhecido": "Maria Eduarda Lima",
+      "arquivo": "trabalho_delta_desafio.jpg",
+      "alunoReconhecido": "Aluno Delta",
       "duvida": false,
       "status": "Nome nítido no cabeçalho"
     }
@@ -425,7 +320,7 @@
   "aluno_padrao_template": {
     "nascimento": "14/03/2019 · 7 anos",
     "status": "Aluno ativo",
-    "acompanhamento": "Participa das propostas em sala e demonstra interesse pela leitura, escrita e atividades de contagem.",
+    "acompanhamento": "Acompanhado pelo sistema pedagógico integrado Marsupi.",
     "atividades": []
   }
 }

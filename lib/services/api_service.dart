@@ -78,17 +78,16 @@ class ApiService {
         };
       }
     } catch (_) {
-      // Ignora erro de rede e cai no fallback
+      // Fallback
     }
 
-    // Fallback MockDataService
     final mockOk = await MockDataService.instance.authenticate(matricula, password);
     final user = await MockDataService.instance.getUser();
     return {
       'success': mockOk,
       'is_remote': false,
       'otp_token': null,
-      'email': user['email'] ?? 'ana.professora@escola.edu.br',
+      'email': user['email'] ?? 'professor@demo.com',
     };
   }
 
@@ -111,11 +110,11 @@ class ApiService {
           final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
           _accessToken = data['access'] as String?;
           _refreshToken = data['refresh'] as String?;
-          await getUser(); // carrega dados do usuário
+          await getUser();
           return true;
         }
       } catch (_) {
-        // Fallback para mock caso falhe
+        // Fallback
       }
     }
 
@@ -158,17 +157,17 @@ class ApiService {
 
         if (res.statusCode == 200) {
           final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-          final nome = data['name'] as String? ?? 'Professor';
+          final nome = data['name'] as String? ?? 'Professor Demo';
           final initials = nome.trim().isNotEmpty
               ? nome.trim().split(' ').map((p) => p[0]).take(2).join().toUpperCase()
-              : 'PR';
+              : 'PD';
 
           _currentUser = {
             'id': data['id'],
             'nome': nome,
             'matricula': data['matricula'] ?? 'DEMO0001',
-            'email': data['email'] ?? '',
-            'escola': 'Escola Marsupi',
+            'email': data['email'] ?? 'professor@demo.com',
+            'escola': 'Escola Marsupi Demo',
             'avatar': initials,
           };
           return _currentUser!;
@@ -213,7 +212,7 @@ class ApiService {
     return await MockDataService.instance.getTurmas();
   }
 
-  /// Listagem de alunos da turma (/api/alunos/)
+  /// Listagem de alunos da turma (/api/alunos/) integrada com dados de relatórios e perfil
   Future<List<Map<String, dynamic>>> getAlunos({int? turmaId}) async {
     if (_accessToken != null) {
       try {
@@ -228,21 +227,75 @@ class ApiService {
         if (res.statusCode == 200) {
           final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
           final results = body['results'] as List<dynamic>? ?? [];
+
+          // Carrega relatórios para associar com os dados reais
+          final relatoriosRes = await http
+              .get(
+                Uri.parse('$baseUrl/api/relatorios/'),
+                headers: _headers(),
+              )
+              .timeout(const Duration(seconds: 4));
+          final Map<int, Map<String, dynamic>> relatoriosPorAluno = {};
+          if (relatoriosRes.statusCode == 200) {
+            final relBody = jsonDecode(utf8.decode(relatoriosRes.bodyBytes)) as Map<String, dynamic>;
+            final relList = relBody['results'] as List<dynamic>? ?? [];
+            for (final r in relList) {
+              final rMap = Map<String, dynamic>.from(r as Map);
+              final aId = rMap['aluno'] as int?;
+              if (aId != null && rMap['dados'] is Map) {
+                relatoriosPorAluno[aId] = Map<String, dynamic>.from(rMap['dados'] as Map);
+              }
+            }
+          }
+
+          // Busca template mock para enriquecer com campos que não existem no banco
+          final mockAlunos = await MockDataService.instance.getAlunos();
+
           return results.map((a) {
             final map = Map<String, dynamic>.from(a as Map);
+            final alunoId = map['id'] as int;
             final nome = map['nome'] as String? ?? 'Aluno';
             final initial = nome.trim().isNotEmpty ? nome.trim()[0].toUpperCase() : 'A';
+            final relatorio = relatoriosPorAluno[alunoId];
+
+            final mockMatch = mockAlunos.cast<Map<String, dynamic>?>().firstWhere(
+                  (m) => m?['id'] == alunoId || m?['nome'] == nome,
+                  orElse: () => null,
+                );
+
+            final acompanhamento = relatorio?['profile_summary'] as String? ??
+                mockMatch?['acompanhamento'] as String? ??
+                'Acompanhado pelo sistema pedagógico integrado Marsupi.';
+
+            final atividades = <Map<String, dynamic>>[];
+            if (relatorio?['adapted_activities'] is List) {
+              for (final ativ in relatorio!['adapted_activities'] as List) {
+                final ativMap = Map<String, dynamic>.from(ativ as Map);
+                atividades.add({
+                  'titulo': ativMap['title'] ?? 'Atividade Adaptada',
+                  'data_envio': 'Enviada em 23/10/2026',
+                  'observacao': ativMap['objective'] ?? ativMap['instructions'] ?? '',
+                });
+              }
+            } else if (mockMatch?['atividades'] is List) {
+              atividades.addAll((mockMatch!['atividades'] as List).cast<Map<String, dynamic>>());
+            }
+
             return {
-              'id': map['id'],
+              'id': alunoId,
               'turma_id': map['turma'],
               'nome': nome,
               'avatar': initial,
-              'matricula': 'AL-2026-00${map['id']}',
-              'nascimento': '14/03/2019 · 7 anos',
-              'status': 'Aluno ativo',
-              'precisa_conferencia': false,
-              'acompanhamento': 'Acompanhado pelo sistema pedagógico integrado.',
-              'atividades': <Map<String, dynamic>>[],
+              'matricula': mockMatch?['matricula'] ?? 'AL-2026-00$alunoId',
+              'nascimento': mockMatch?['nascimento'] ?? '14/03/2019 · 7 anos',
+              'status': mockMatch?['status'] ?? 'Aluno ativo',
+              'precisa_conferencia': mockMatch?['precisa_conferencia'] ?? false,
+              'acompanhamento': acompanhamento,
+              'radar_metrics': relatorio?['radar_metrics'] ?? mockMatch?['radar_metrics'],
+              'strengths': relatorio?['strengths'] ?? mockMatch?['strengths'],
+              'support_needs': relatorio?['support_needs'] ?? mockMatch?['support_needs'],
+              'dica_autonomia': relatorio?['autonomy_coaching_tip'] ?? mockMatch?['dica_autonomia'],
+              'atividades': atividades,
             };
           }).toList();
         }
@@ -269,13 +322,14 @@ class ApiService {
           if (results.isNotEmpty) {
             return results.map((ativ) {
               final map = Map<String, dynamic>.from(ativ as Map);
+              final relCount = (map['relatorios'] as List<dynamic>?)?.length ?? 1;
               return {
                 'id': map['id'],
                 'turma_id': turmaId ?? 1,
                 'nome': map['nome'] ?? 'Atividade',
-                'tipo': map['tipo'] ?? 'Pedagógico',
-                'relatorios_count': 0,
-                'descricao': '',
+                'tipo': map['tipo'] ?? 'Linguagem / Alfabetização',
+                'relatorios_count': relCount,
+                'descricao': 'Atividade pedagógica registrada no sistema.',
               };
             }).toList();
           }
@@ -317,7 +371,6 @@ class ApiService {
           final nova = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
           final turmaId = nova['id'] as int;
 
-          // Cadastra os alunos reconhecidos no backend
           for (final alunoNome in nomesAlunos) {
             try {
               await http.post(
