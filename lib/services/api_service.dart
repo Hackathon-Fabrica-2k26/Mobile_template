@@ -532,8 +532,20 @@ class ApiService {
     }
     final body = _decode(res);
     if (res.statusCode == 200 && body is Map) {
-      final nomes = (body['nomes'] as List<dynamic>? ?? []).cast<String>();
-      return nomes.map((n) => {'nome': n}).toList();
+      // O backend devolve [{nome, confianca}]; versões antigas devolviam só textos.
+      final itens = body['nomes'] as List<dynamic>? ?? [];
+      return itens
+          .map<Map<String, dynamic>>((item) {
+            if (item is Map) {
+              return {
+                'nome': (item['nome'] ?? '').toString(),
+                'confianca': (item['confianca'] as num?)?.toDouble(),
+              };
+            }
+            return {'nome': item.toString(), 'confianca': null};
+          })
+          .where((item) => (item['nome'] as String).trim().isNotEmpty)
+          .toList();
     }
     throw ApiException(
       _errorMessage(body, 'Não foi possível reconhecer os nomes da foto.'),
@@ -550,25 +562,32 @@ class ApiService {
     final t = turno.toLowerCase();
     final turnoCode = t.contains('tarde')
         ? 'tarde'
-        : t.contains('integral')
-            ? 'integral'
-            : 'manha';
+        : t.contains('noite')
+            ? 'noite'
+            : t.contains('integral')
+                ? 'integral'
+                : 'manha';
 
+    // Turma e alunos numa só chamada: o backend cria tudo em uma transação.
     final nova = await _write(
       'POST',
       '/api/turmas/',
-      {'nome': nome.trim(), 'turno': turnoCode, 'ano_letivo': anoLetivo},
+      {
+        'nome': nome.trim(),
+        'turno': turnoCode,
+        'ano_letivo': anoLetivo,
+        'alunos': nomesAlunos.map((n) => n.trim()).where((n) => n.isNotEmpty).toList(),
+      },
       okCodes: {201},
     );
     final turmaId = nova['id'] as int;
-    await addAlunosNaTurma(turmaId: turmaId, nomesAlunos: nomesAlunos);
 
     return {
       'id': turmaId,
       'nome': nova['nome'],
       'turno': nova['turno_display'] ?? turno,
       'ano_letivo': nova['ano_letivo'],
-      'estudantes_count': nomesAlunos.length,
+      'estudantes_count': nova['total_estudantes'] ?? nomesAlunos.length,
     };
   }
 
