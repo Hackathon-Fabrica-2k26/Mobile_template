@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
@@ -19,9 +21,62 @@ class _OtpScreenState extends State<OtpScreen> {
       List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
+  static const int _intervaloReenvio = 30;
+  int _segundosRestantes = _intervaloReenvio;
+  bool _reenviando = false;
+  Timer? _timer;
+
+  void _iniciarContagem() {
+    _timer?.cancel();
+    _segundosRestantes = _intervaloReenvio;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_segundosRestantes <= 1) {
+        timer.cancel();
+        setState(() => _segundosRestantes = 0);
+      } else {
+        setState(() => _segundosRestantes--);
+      }
+    });
+  }
+
+  String get _contagemFormatada {
+    final s = _segundosRestantes.toString().padLeft(2, '0');
+    return '00:$s';
+  }
+
+  Future<void> _reenviarCodigo() async {
+    if (_segundosRestantes > 0 || _reenviando) return;
+    setState(() => _reenviando = true);
+    final ok = await ApiService.instance.resendOtp();
+    if (!mounted) return;
+    setState(() => _reenviando = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Novo código enviado para seu e-mail.'
+              : 'Não foi possível reenviar o código. Tente novamente.',
+        ),
+        backgroundColor: ok ? MarsupiColors.primary : Colors.redAccent,
+      ),
+    );
+    if (ok) {
+      for (final c in _controllers) {
+        c.clear();
+      }
+      _focusNodes[0].requestFocus();
+      setState(_iniciarContagem);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _iniciarContagem();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _focusNodes[0].requestFocus();
@@ -31,6 +86,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     for (var c in _controllers) {
       c.dispose();
     }
@@ -244,14 +300,27 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const SizedBox(height: 22),
               Center(
-                child: Text(
-                  'Reenviar código em 00:24',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: MarsupiTheme.primaryGreen,
-                  ),
-                ),
+                child: _segundosRestantes > 0
+                    ? Text(
+                        'Reenviar código em $_contagemFormatada',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: MarsupiTheme.primaryGreen,
+                        ),
+                      )
+                    : TextButton(
+                        onPressed: _reenviando ? null : _reenviarCodigo,
+                        child: Text(
+                          _reenviando ? 'Reenviando...' : 'Reenviar código',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: MarsupiTheme.primaryGreen,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(height: 16),
               Center(
