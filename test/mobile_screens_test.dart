@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_template/screens/aluno_detalhes_screen.dart';
 import 'package:mobile_template/screens/enviar_atividades_screen.dart';
+import 'package:mobile_template/screens/enviar_trabalhos_screen.dart';
 import 'package:mobile_template/screens/erro_404_screen.dart';
 import 'package:mobile_template/screens/home_screen.dart';
 
@@ -85,5 +86,39 @@ void main() {
     expect(find.text('Início'), findsOneWidget);
     expect(find.text('Turmas'), findsOneWidget);
     expect(find.text('Perfil'), findsOneWidget);
+  });
+
+  testWidgets('EnviarTrabalhosScreen exibe trabalhos pendentes e pede para escolher aluno da turma', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: EnviarTrabalhosScreen(
+          turmaId: 1,
+          turmaNome: '1º ano A',
+          atividadeId: 10,
+          atividadeTitulo: 'Explorando as vogais',
+          estudantesIniciais: [
+            {'id': 101, 'nome': 'Alice Santos'},
+            {'id': 102, 'nome': 'Bruno Lima'},
+          ],
+          trabalhosIniciais: [
+            {
+              'id': 501,
+              'aluno': null,
+              'nome_lido': 'Alice S.',
+              'confianca_nome': 0.72,
+              'identificacao': 'pendente',
+            },
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enviar trabalhos'), findsOneWidget);
+    expect(find.text('Tirar foto'), findsOneWidget);
+    expect(find.text('Galeria'), findsOneWidget);
+    expect(find.text('Nome lido: Alice S.'), findsOneWidget);
+    expect(find.text('Escolha o aluno da turma para confirmar:'), findsOneWidget);
+    expect(find.text('Confirmar aluno'), findsOneWidget);
   });
 }

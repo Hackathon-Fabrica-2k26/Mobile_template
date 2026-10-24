@@ -3,6 +3,9 @@ class Trabalho {
   final int? atividadeId;
   final int? alunoId;
   final String? alunoNome;
+  final String? nomeLido;
+  final double? confiancaNome;
+  final String? identificacao;
   final String? arquivoNome;
   final String? arquivoUrl;
   final String? tamanho;
@@ -15,6 +18,9 @@ class Trabalho {
     this.atividadeId,
     this.alunoId,
     this.alunoNome,
+    this.nomeLido,
+    this.confiancaNome,
+    this.identificacao,
     this.arquivoNome,
     this.arquivoUrl,
     this.tamanho,
@@ -24,19 +30,27 @@ class Trabalho {
   });
 
   factory Trabalho.fromJson(Map<String, dynamic> json) {
+    final ident = json['identificacao'] as String?;
     return Trabalho(
       id: json['id'] is int
           ? json['id'] as int
           : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
       atividadeId: json['atividade_id'] as int? ?? json['atividade'] as int?,
       alunoId: json['aluno_id'] as int? ?? json['aluno'] as int?,
-      alunoNome: json['aluno_nome'] as String? ?? json['alunoReconhecido'] as String?,
-      arquivoNome: json['arquivo_nome'] as String? ?? json['arquivo'] as String? ?? json['nome'] as String?,
+      alunoNome:
+          json['aluno_nome'] as String? ?? json['alunoReconhecido'] as String?,
+      nomeLido: json['nome_lido'] as String?,
+      confiancaNome: (json['confianca_nome'] as num?)?.toDouble() ??
+          (json['confianca'] as num?)?.toDouble(),
+      identificacao: ident,
+      arquivoNome: json['arquivo_nome'] as String? ??
+          json['arquivo'] as String? ??
+          json['nome'] as String?,
       arquivoUrl: json['arquivo_url'] as String?,
       tamanho: json['tamanho'] as String?,
       precisaConferencia: json['duvida'] as bool? ??
           json['precisa_conferencia'] as bool? ??
-          false,
+          (ident == 'pendente'),
       status: json['status'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
@@ -50,6 +64,9 @@ class Trabalho {
       if (atividadeId != null) 'atividade': atividadeId,
       if (alunoId != null) 'aluno': alunoId,
       if (alunoNome != null) 'aluno_nome': alunoNome,
+      if (nomeLido != null) 'nome_lido': nomeLido,
+      if (confiancaNome != null) 'confianca_nome': confiancaNome,
+      if (identificacao != null) 'identificacao': identificacao,
       if (arquivoNome != null) 'arquivo': arquivoNome,
       if (arquivoUrl != null) 'arquivo_url': arquivoUrl,
       if (tamanho != null) 'tamanho': tamanho,

@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'aluno_detalhes_screen.dart';
 import 'enviar_atividades_screen.dart';
+import 'enviar_trabalhos_screen.dart';
 import 'loading_screen.dart';
 import 'turma_cadastro_flow.dart';
 
@@ -161,6 +162,26 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
       ),
     );
     if (enviada == true && mounted) {
+      _loadData();
+    }
+  }
+
+  Future<void> _abrirEnviarTrabalhos(Map<String, dynamic> ativ) async {
+    final ativId = ativ['id'] as int?;
+    if (ativId == null) return;
+    final atualizou = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EnviarTrabalhosScreen(
+          turmaId: widget.turmaId,
+          turmaNome: widget.turmaNome,
+          atividadeId: ativId,
+          atividadeTitulo: (ativ['nome'] as String?) ?? 'Atividade',
+          estudantesIniciais: _estudantes,
+        ),
+      ),
+    );
+    if (atualizou == true && mounted) {
       _loadData();
     }
   }
@@ -646,63 +667,67 @@ class _TurmaDetailScreenState extends State<TurmaDetailScreen> {
                           ...atividadesExibidas.map((ativ) {
                             final nomeAtiv =
                                 (ativ['nome'] as String?) ?? '';
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.fromLTRB(
-                                14,
-                                12,
-                                14,
-                                12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFDCE6DF),
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => _abrirEnviarTrabalhos(ativ),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.fromLTRB(
+                                  14,
+                                  12,
+                                  14,
+                                  12,
                                 ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    nomeAtiv,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: MarsupiTheme.textPrimary,
-                                    ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFDCE6DF),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Relatórios da atividade',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: const Color(0xFF70877B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Abrir atividade',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: MarsupiTheme.primaryGreen,
-                                        ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      nomeAtiv,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: MarsupiTheme.textPrimary,
                                       ),
-                                      Text(
-                                        '›',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: MarsupiTheme.primaryGreen,
-                                        ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Relatórios da atividade',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11,
+                                        color: const Color(0xFF70877B),
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Abrir atividade',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: MarsupiTheme.primaryGreen,
+                                          ),
+                                        ),
+                                        Text(
+                                          '›',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: MarsupiTheme.primaryGreen,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }),

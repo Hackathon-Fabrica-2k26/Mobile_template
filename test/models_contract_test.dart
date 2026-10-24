@@ -73,6 +73,20 @@ void main() {
       expect(trab.alunoNome, 'Alice Santos');
       expect(trab.arquivoNome, 'trabalho_01.jpg');
       expect(trab.precisaConferencia, isFalse);
+
+      final trabPendente = Trabalho.fromJson({
+        'id': 21,
+        'atividade': 10,
+        'aluno': null,
+        'nome_lido': 'Helena R.',
+        'confianca_nome': 0.65,
+        'identificacao': 'pendente',
+      });
+      expect(trabPendente.id, 21);
+      expect(trabPendente.nomeLido, 'Helena R.');
+      expect(trabPendente.confiancaNome, 0.65);
+      expect(trabPendente.identificacao, 'pendente');
+      expect(trabPendente.precisaConferencia, isTrue);
     });
 
     test('Relatorio desserializa dados de análise pedagógica', () {

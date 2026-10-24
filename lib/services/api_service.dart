@@ -680,4 +680,92 @@ class ApiService {
       'origem': a['origem'] ?? origemLimpa,
     };
   }
+
+  Map<String, dynamic> _mapTrabalho(Map<String, dynamic> t) {
+    return {
+      'id': t['id'],
+      'envio': t['envio'],
+      'atividade': t['atividade'],
+      'aluno': t['aluno'],
+      'aluno_nome': t['aluno_nome'],
+      'nome_lido': (t['nome_lido'] ?? '').toString(),
+      'confianca_nome': (t['confianca_nome'] as num?)?.toDouble(),
+      'identificacao': (t['identificacao'] ?? 'pendente').toString(),
+      'descricao_ia': (t['descricao_ia'] ?? '').toString(),
+      'status': (t['status'] ?? '').toString(),
+    };
+  }
+
+  /// Lista trabalhos já enviados para uma atividade (GET /api/trabalhos/?atividade={id}).
+  Future<List<Map<String, dynamic>>> getTrabalhos({int? atividadeId}) async {
+    final query = atividadeId != null ? '?atividade=$atividadeId' : '';
+    final itens = await _getList('/api/trabalhos/$query');
+    return itens.map(_mapTrabalho).toList();
+  }
+
+  /// Envia fotos/arquivos de trabalhos dos alunos (POST /api/atividades/{id}/trabalhos/).
+  /// Recebe cada item de [arquivos] no formato {'bytes': List<int>, 'filename': String}.
+  /// Devolve EnvioTrabalhos {id, atividade, total_arquivos, trabalhos: [{id, aluno, nome_lido, confianca_nome, identificacao}]}.
+  Future<Map<String, dynamic>> enviarTrabalhos({
+    required int atividadeId,
+    required List<Map<String, dynamic>> arquivos,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/atividades/$atividadeId/trabalhos/'),
+    )..headers.addAll(_headers(json: false));
+
+    for (final arq in arquivos) {
+      final bytes = arq['bytes'] as List<int>?;
+      final filename =
+          (arq['filename'] ?? arq['nome'] ?? 'trabalho.jpg').toString();
+      if (bytes != null && bytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes('arquivos', bytes, filename: filename),
+        );
+      }
+    }
+
+    http.Response res;
+    try {
+      res = await http.Response.fromStream(
+        await request.send().timeout(const Duration(seconds: 90)),
+      );
+    } catch (_) {
+      throw const ApiException(_msgOffline);
+    }
+
+    final body = _decode(res);
+    if ((res.statusCode == 201 || res.statusCode == 200) && body is Map) {
+      final rawTrabalhos = body['trabalhos'] as List<dynamic>? ?? [];
+      final trabalhos = rawTrabalhos
+          .whereType<Map>()
+          .map((item) => _mapTrabalho(Map<String, dynamic>.from(item)))
+          .toList();
+      return {
+        'id': body['id'],
+        'atividade': body['atividade'] ?? atividadeId,
+        'total_arquivos': body['total_arquivos'] ?? trabalhos.length,
+        'trabalhos': trabalhos,
+      };
+    }
+    throw ApiException(
+      _errorMessage(body, 'Não foi possível enviar os trabalhos.'),
+      statusCode: res.statusCode,
+    );
+  }
+
+  /// Confirma ou atribui manualmente o aluno de um trabalho (PATCH /api/trabalhos/{id}/).
+  Future<Map<String, dynamic>> confirmarTrabalho({
+    required int id,
+    required int alunoId,
+  }) async {
+    final atualizado = await _write(
+      'PATCH',
+      '/api/trabalhos/$id/',
+      {'aluno': alunoId},
+      okCodes: {200},
+    );
+    return _mapTrabalho(atualizado);
+  }
 }
