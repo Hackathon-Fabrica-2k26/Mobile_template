@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/marsupi_theme.dart';
 import '../services/api_service.dart';
+import 'home_screen.dart';
 import 'loading_screen.dart';
 import 'otp_screen.dart';
 
@@ -39,7 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (mounted) {
-      if (result?['success'] == true) {
+      if (result?['success'] == true && result?['otp_required'] == false) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      } else if (result?['success'] == true) {
         final email = (result?['email'] as String?) ?? '';
         Navigator.of(context).push(
           MaterialPageRoute(

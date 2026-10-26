@@ -213,7 +213,9 @@ class ApiService {
     }
   }
 
-  /// Passo 1: matrícula + senha em /api/auth/login/. O backend envia o OTP ao e-mail do usuário.
+  /// Passo 1: matrícula + senha em /api/auth/login/.
+  /// Conta sem verificação em duas etapas (padrão): o backend já devolve os tokens
+  /// e `otp_required` vem falso. Com ela ligada, envia o código ao e-mail.
   Future<Map<String, dynamic>> login(String matricula, String password) async {
     try {
       final res = await http
@@ -229,9 +231,17 @@ class ApiService {
       final body = _decode(res);
 
       if (res.statusCode == 200 && body is Map) {
+        final access = body['access'] as String?;
+        if (body['otp_required'] == false && access != null) {
+          _accessToken = access;
+          _refreshToken = body['refresh'] as String?;
+          _lastOtpToken = null;
+          return {'success': true, 'otp_required': false};
+        }
         _lastOtpToken = body['otp_token'] as String?;
         return {
           'success': true,
+          'otp_required': true,
           'otp_token': _lastOtpToken,
           'email': body['email'] as String?,
         };
