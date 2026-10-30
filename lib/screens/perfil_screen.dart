@@ -247,9 +247,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ApiService.instance.logout();
+              await ApiService.instance.logout();
+              if (!mounted) return;
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
