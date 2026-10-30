@@ -23,4 +23,39 @@ void main() {
     expect(ApiService.formatarData(null), '');
     expect(ApiService.formatarData('inválido'), '');
   });
+
+  test('setTokens e logout gerenciam a sessao e limpam tokens', () async {
+    final api = ApiService.instance;
+    final original = api.baseUrl;
+    api.setBaseUrl('http://127.0.0.1:9');
+
+    api.setTokens(access: 'token-access-teste', refresh: 'token-refresh-teste');
+    expect(api.isAuthenticated, isTrue);
+    expect(api.accessToken, 'token-access-teste');
+    expect(api.refreshToken, 'token-refresh-teste');
+
+    // logout tenta chamar POST /api/auth/logout/ no servidor; se falhar (offline), limpa mesmo assim
+    await api.logout();
+    expect(api.isAuthenticated, isFalse);
+    expect(api.accessToken, isNull);
+    expect(api.refreshToken, isNull);
+
+    api.setBaseUrl(original);
+  });
+
+  test('refreshToken sem token de refresh chama onSessionExpired e devolve false', () async {
+    final api = ApiService.instance;
+    api.setTokens(access: null, refresh: null);
+
+    var expirou = false;
+    api.onSessionExpired = () {
+      expirou = true;
+    };
+
+    final sucesso = await api.refreshToken();
+    expect(sucesso, isFalse);
+    expect(expirou, isTrue);
+
+    api.onSessionExpired = null;
+  });
 }

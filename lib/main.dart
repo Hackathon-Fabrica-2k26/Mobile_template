@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'constants/marsupi_theme.dart';
 import 'screens/erro_404_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/api_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,7 @@ class MarsupiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: ApiService.navigatorKey,
       title: 'Marsupi',
       debugShowCheckedModeBanner: false,
       theme: MarsupiTheme.theme,

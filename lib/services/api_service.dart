@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../screens/login_screen.dart';
 
 /// Erro de comunicação com o backend, com mensagem apresentável ao usuário.
 class ApiException implements Exception {
@@ -28,6 +30,14 @@ class ApiService {
   static const String _msgOffline =
       'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
+  /// Callback opcional chamado quando o refresh token expira ou é invalidado.
+  void Function()? onSessionExpired;
+
+  Future<bool>? _refreshFuture;
+
   String? _accessToken;
   String? _refreshToken;
   String? _lastOtpToken;
@@ -36,6 +46,14 @@ class ApiService {
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
   bool get isAuthenticated => _accessToken != null;
+
+  void setTokens({String? access, String? refresh}) {
+    _accessToken = access;
+    _refreshToken = refresh;
+  }
+
+  /// Força a renovação dos tokens chamando POST /api/auth/refresh/.
+  Future<bool> refreshToken() => _refreshTokenIfNeeded(_accessToken);
 
   void setBaseUrl(String url) {
     baseUrl = url.replaceAll(RegExp(r'/+$'), '');
@@ -74,11 +92,104 @@ class ApiService {
     return fallback;
   }
 
-  Future<http.Response> _send(Future<http.Response> Function() request) async {
+  Future<http.Response> _send(
+    Future<http.Response> Function() request, {
+    Duration timeout = _timeout,
+    bool retryOn401 = true,
+  }) async {
+    http.Response res;
     try {
-      return await request().timeout(_timeout);
+      res = await request().timeout(timeout);
     } catch (_) {
       throw const ApiException(_msgOffline);
+    }
+
+    if (retryOn401 && res.statusCode == 401 && _refreshToken != null) {
+      final tokenBefore = _accessToken;
+      final refreshed = await _refreshTokenIfNeeded(tokenBefore);
+      if (refreshed) {
+        try {
+          res = await request().timeout(timeout);
+        } catch (_) {
+          throw const ApiException(_msgOffline);
+        }
+      }
+    }
+
+    return res;
+  }
+
+  Future<bool> _refreshTokenIfNeeded(String? tokenBefore) async {
+    // Se o token já foi renovado enquanto esta requisição aguardava,
+    // não precisamos chamar o refresh de novo.
+    if (tokenBefore != null &&
+        _accessToken != null &&
+        tokenBefore != _accessToken) {
+      return true;
+    }
+
+    if (_refreshFuture != null) {
+      return await _refreshFuture!;
+    }
+
+    _refreshFuture = _doRefreshToken().whenComplete(() {
+      _refreshFuture = null;
+    });
+
+    return await _refreshFuture!;
+  }
+
+  Future<bool> _doRefreshToken() async {
+    final currentRefresh = _refreshToken;
+    if (currentRefresh == null || currentRefresh.isEmpty) {
+      _handleSessionExpired();
+      return false;
+    }
+
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/refresh/'),
+            headers: _headers(withAuth: false),
+            body: jsonEncode({'refresh': currentRefresh}),
+          )
+          .timeout(_timeout);
+
+      final body = _decode(res);
+      if (res.statusCode == 200 && body is Map) {
+        final newAccess = body['access'] as String?;
+        final newRefresh = body['refresh'] as String?;
+        if (newAccess != null && newAccess.isNotEmpty) {
+          _accessToken = newAccess;
+          if (newRefresh != null && newRefresh.isNotEmpty) {
+            _refreshToken = newRefresh;
+          }
+          return true;
+        }
+      }
+
+      if (res.statusCode == 401 || res.statusCode == 400) {
+        _handleSessionExpired();
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _handleSessionExpired() {
+    _accessToken = null;
+    _refreshToken = null;
+    _lastOtpToken = null;
+    _currentUser = null;
+
+    if (onSessionExpired != null) {
+      onSessionExpired!();
+    } else {
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -317,7 +428,23 @@ class ApiService {
     return false;
   }
 
-  void logout() {
+  /// Encerra a sessão do usuário. Chama POST /api/auth/logout/ com o refresh token
+  /// para invalidá-lo no servidor (blacklist) antes de limpar a sessão local.
+  Future<void> logout() async {
+    final refresh = _refreshToken;
+    if (refresh != null && refresh.isNotEmpty) {
+      try {
+        await http
+            .post(
+              Uri.parse('$baseUrl/api/auth/logout/'),
+              headers: _headers(withAuth: false),
+              body: jsonEncode({'refresh': refresh}),
+            )
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {
+        // Se a chamada falhar (sem rede, token já inválido), limpa mesmo assim.
+      }
+    }
     _accessToken = null;
     _refreshToken = null;
     _lastOtpToken = null;
@@ -523,23 +650,18 @@ class ApiService {
     required List<int> bytes,
     required String filename,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/api/chamada/reconhecer/'),
-    )
-      ..headers.addAll(_headers(json: false))
-      ..files.add(
-        http.MultipartFile.fromBytes('imagem', bytes, filename: filename),
-      );
+    final res = await _send(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/chamada/reconhecer/'),
+      )
+        ..headers.addAll(_headers(json: false))
+        ..files.add(
+          http.MultipartFile.fromBytes('imagem', bytes, filename: filename),
+        );
+      return await http.Response.fromStream(await request.send());
+    }, timeout: const Duration(seconds: 60));
 
-    http.Response res;
-    try {
-      res = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 60)),
-      );
-    } catch (_) {
-      throw const ApiException(_msgOffline);
-    }
     final body = _decode(res);
     if (res.statusCode == 200 && body is Map) {
       // O backend devolve [{nome, confianca}]; versões antigas devolviam só textos.
@@ -621,26 +743,21 @@ class ApiService {
     required String filename,
     int? turmaId,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/api/atividades/extrair/'),
-    )
-      ..headers.addAll(_headers(json: false))
-      ..files.add(
-        http.MultipartFile.fromBytes('arquivo', bytes, filename: filename),
-      );
-    if (turmaId != null) {
-      request.fields['turma'] = turmaId.toString();
-    }
+    final res = await _send(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/atividades/extrair/'),
+      )
+        ..headers.addAll(_headers(json: false))
+        ..files.add(
+          http.MultipartFile.fromBytes('arquivo', bytes, filename: filename),
+        );
+      if (turmaId != null) {
+        request.fields['turma'] = turmaId.toString();
+      }
+      return await http.Response.fromStream(await request.send());
+    }, timeout: const Duration(seconds: 60));
 
-    http.Response res;
-    try {
-      res = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 60)),
-      );
-    } catch (_) {
-      throw const ApiException(_msgOffline);
-    }
     final body = _decode(res);
     if (res.statusCode == 200 && body is Map) {
       final lower = filename.toLowerCase();
@@ -720,30 +837,24 @@ class ApiService {
     required int atividadeId,
     required List<Map<String, dynamic>> arquivos,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/api/atividades/$atividadeId/trabalhos/'),
-    )..headers.addAll(_headers(json: false));
+    final res = await _send(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/atividades/$atividadeId/trabalhos/'),
+      )..headers.addAll(_headers(json: false));
 
-    for (final arq in arquivos) {
-      final bytes = arq['bytes'] as List<int>?;
-      final filename =
-          (arq['filename'] ?? arq['nome'] ?? 'trabalho.jpg').toString();
-      if (bytes != null && bytes.isNotEmpty) {
-        request.files.add(
-          http.MultipartFile.fromBytes('arquivos', bytes, filename: filename),
-        );
+      for (final arq in arquivos) {
+        final bytes = arq['bytes'] as List<int>?;
+        final filename =
+            (arq['filename'] ?? arq['nome'] ?? 'trabalho.jpg').toString();
+        if (bytes != null && bytes.isNotEmpty) {
+          request.files.add(
+            http.MultipartFile.fromBytes('arquivos', bytes, filename: filename),
+          );
+        }
       }
-    }
-
-    http.Response res;
-    try {
-      res = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 90)),
-      );
-    } catch (_) {
-      throw const ApiException(_msgOffline);
-    }
+      return await http.Response.fromStream(await request.send());
+    }, timeout: const Duration(seconds: 90));
 
     final body = _decode(res);
     if ((res.statusCode == 201 || res.statusCode == 200) && body is Map) {
