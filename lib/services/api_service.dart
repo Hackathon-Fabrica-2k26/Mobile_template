@@ -53,7 +53,7 @@ class ApiService {
   }
 
   /// Força a renovação dos tokens chamando POST /api/auth/refresh/.
-  Future<bool> refreshToken() => _refreshTokenIfNeeded(_accessToken);
+  Future<bool> refreshTokens() => _refreshTokenIfNeeded(_accessToken);
 
   void setBaseUrl(String url) {
     baseUrl = url.replaceAll(RegExp(r'/+$'), '');

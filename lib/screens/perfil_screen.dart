@@ -250,13 +250,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               await ApiService.instance.logout();
-              if (context.mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             child: Text(
               'Sair',

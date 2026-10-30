@@ -52,7 +52,7 @@ void main() {
       expirou = true;
     };
 
-    final sucesso = await api.refreshToken();
+    final sucesso = await api.refreshTokens();
     expect(sucesso, isFalse);
     expect(expirou, isTrue);
 
